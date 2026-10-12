@@ -14,24 +14,34 @@ h1{font-size:22px;margin-bottom:6px}
 .card h2{font-size:17px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e8a838}
 .card h3{font-size:15px;margin:14px 0 8px;color:#555}
 label{display:block;font-size:13px;font-weight:bold;margin:10px 0 4px;color:#555}
-input[type=text],textarea{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit}
-textarea{min-height:80px;resize:vertical}
+input[type=text],textarea,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit}
+textarea{min-height:60px;resize:vertical}
+textarea.tall{min-height:100px}
 .hint{font-size:12px;color:#999;margin-top:2px}
-.row{display:flex;gap:10px}
-.row>div{flex:1}
+.seg-box{background:#fafafa;border:1px solid #eee;border-radius:6px;padding:12px;margin-bottom:10px}
+.seg-box h4{font-size:14px;margin-bottom:8px;color:#e8a838}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .btn{background:#e8a838;color:#fff;border:none;padding:12px 24px;font-size:16px;border-radius:6px;cursor:pointer;width:100%;margin-top:10px}
 .btn:hover{background:#d6962a}
-.btn-secondary{background:#666;margin-top:8px}
+.btn-green{background:#4CAF50}
+.btn-gray{background:#666}
+.btn-row{display:flex;gap:8px;margin-top:10px}
+.btn-row .btn{margin-top:0}
 .output{background:#1e1e1e;color:#d4d4d4;border-radius:8px;padding:20px;margin-top:16px;white-space:pre-wrap;font-family:'Consolas','Monaco',monospace;font-size:13px;max-height:600px;overflow-y:auto}
-.copy-btn{background:#4CAF50;margin-top:10px}
+.autosave{font-size:12px;color:#999;text-align:right;margin-bottom:8px}
+.warn{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px;margin-bottom:16px;font-size:14px;display:none}
 .section-nav{position:sticky;top:0;background:#f5f5f5;padding:10px 0;z-index:10;margin-bottom:10px}
 .section-nav a{font-size:12px;margin-right:8px;color:#e8a838;text-decoration:none}
+.status-tag{font-size:11px;background:#e8a838;color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px}
 </style>
 </head>
 <body>
 <div class="container">
-<h1>🍳 Cook with Nampy — 콘티 작성 도우미</h1>
-<p class="subtitle">9개 섹션 템플릿으로 영상 콘티를 작성합니다. v1.0</p>
+<h1>🍳 Cook with Nampy — 콘티 작성 도우미 <span class="status-tag">v2.0</span></h1>
+<p class="subtitle">9개 섹션 템플릿으로 영상 콘티를 작성합니다. 입력 내용은 자동 저장됩니다.</p>
+<div class="autosave" id="autosaveMsg"></div>
+
+<div class="warn" id="warnBox"></div>
 
 <div class="section-nav">
 <a href="#s0">기본</a><a href="#s1">1.콘셉트</a><a href="#s2">2.촬영전확인</a><a href="#s3">3.재료도구</a><a href="#s4">4.조리순서</a><a href="#s5">5.영상콘티</a><a href="#s6">6.촬영순서</a><a href="#s7">7.필수장면</a><a href="#s8">8.제목썸네일</a><a href="#s9">9.남은확인</a>
@@ -39,10 +49,10 @@ textarea{min-height:80px;resize:vertical}
 
 <div class="card" id="s0">
 <h2>기본 정보</h2>
-<label>요리명</label>
+<label>요리명 *</label>
 <input type="text" id="dishName" placeholder="예: 유부김밥">
 <label>작성일</label>
-<input type="text" id="writeDate" placeholder="2026-10-12">
+<input type="text" id="writeDate">
 <label>예상 편집 길이</label>
 <input type="text" id="editLength" placeholder="예: 5~7분">
 <label>촬영 제약</label>
@@ -51,70 +61,54 @@ textarea{min-height:80px;resize:vertical}
 
 <div class="card" id="s1">
 <h2>1. 콘셉트</h2>
-<label>한 문장 (누구의 어떤 불편함을 어떤 방법으로)</label>
-<input type="text" id="concept1" placeholder="예: 유부초밥 하나씩 채우기 귀찮은 사람을 위해 김밥틀로 한 줄씩 만든다">
+<label>한 문장</label>
+<input type="text" id="concept1" placeholder="누구의 어떤 불편함을 어떤 방법으로">
 <label>핵심 3가지</label>
-<textarea id="concept3" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
-<label>시청자가 얻는 것</label>
-<input type="text" id="viewerGain">
-<label>이번에 확인할 점</label>
-<input type="text" id="toVerify">
+<textarea id="concept3" class="tall" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
+<div class="grid2">
+<div><label>시청자가 얻는 것</label><input type="text" id="viewerGain"></div>
+<div><label>이번에 확인할 점</label><input type="text" id="toVerify"></div>
+</div>
 </div>
 
 <div class="card" id="s2">
 <h2>2. 촬영 전 확인·기입</h2>
 <label>체크리스트 (한 줄에 하나씩)</label>
-<textarea id="checklist" placeholder="- [ ] 제품명:&#10;- [ ] 유부 개수:&#10;- [ ] 밥량:"></textarea>
-<p class="hint">숫자는 실측 후 기입. 임의로 채우지 않기.</p>
+<textarea id="checklist" class="tall" placeholder="- [ ] 제품명:&#10;- [ ] 유부 개수: [확인 필요]&#10;- [ ] 밥량: 권장량 / 실측"></textarea>
+<p class="hint">권장량 / 실측 / [확인 필요] 구분해서 기입</p>
 </div>
 
 <div class="card" id="s3">
 <h2>3. 재료·도구</h2>
-<label>기본형 재료 (한 줄에 하나씩: 재료 - 분량)</label>
-<textarea id="ingredients" placeholder="- 유부초밥 세트 1팩&#10;- 지은 밥 00g"></textarea>
+<label>기본형 재료</label>
+<textarea id="ingredients" class="tall" placeholder="- 유부초밥 세트 1팩 (실측)&#10;- 지은 밥 00g (설명서 권장량)"></textarea>
 <label>도구</label>
 <textarea id="tools" placeholder="- 김밥 성형틀&#10;- 저울"></textarea>
-<label>응용형 (있으면)</label>
-<input type="text" id="variation" placeholder="예: 스리라차 버전">
+<label>응용형 (선택)</label>
+<input type="text" id="variation" placeholder="없으면 비워두기">
 </div>
 
 <div class="card" id="s4">
-<h2>4. 조리 순서</h2>
-<label>단계별 (한 줄에 하나씩)</label>
-<textarea id="cookSteps" placeholder="1. 유부 개수 세기&#10;2. 밥 양념하기&#10;3. ..."></textarea>
+<h2>4. 조리 순서 *</h2>
+<textarea id="cookSteps" class="tall" placeholder="1. ...&#10;2. ..."></textarea>
 <label>실패 방지 포인트</label>
-<input type="text" id="failPoint">
+<input type="text" id="failPoint" placeholder="예: 과도한 조미액은 빼되 촉촉함은 남기기">
 </div>
 
 <div class="card" id="s5">
 <h2>5. 영상 콘티</h2>
-<p class="hint">각 구간: 시간 | 화면 | 멘트 형식으로 입력</p>
-<label>5-1. 오프닝</label>
-<textarea id="seg1" placeholder="0:00~0:20 | 완성 단면 | 유부초밥 하나씩 채우기 귀찮잖아요"></textarea>
-<label>5-2. 재료·분량</label>
-<textarea id="seg2"></textarea>
-<label>5-3. 준비·실패방지</label>
-<textarea id="seg3"></textarea>
-<label>5-4. 핵심 조리</label>
-<textarea id="seg4"></textarea>
-<label>5-5. 꺼내기·마무리</label>
-<textarea id="seg5"></textarea>
-<label>5-6. 응용형 (없으면 비워두기)</label>
-<textarea id="seg6"></textarea>
-<label>5-7. 완성량·플레이팅</label>
-<textarea id="seg7"></textarea>
-<label>5-8. 시식·마무리</label>
-<textarea id="seg8"></textarea>
+<p class="hint">각 구간별로 시간·화면·멘트·자막을 나눠 입력하세요.</p>
+<div id="segments"></div>
 </div>
 
 <div class="card" id="s6">
 <h2>6. 실제 촬영 순서</h2>
-<textarea id="shootOrder" placeholder="1. 재료·포장·계량&#10;2. 조리 순서대로&#10;3. ..."></textarea>
+<textarea id="shootOrder" class="tall" placeholder="1. ...&#10;2. ..."></textarea>
 </div>
 
 <div class="card" id="s7">
 <h2>7. 꼭 확보할 장면</h2>
-<textarea id="mustShots" placeholder="- [ ] 완성 오프닝 컷&#10;- [ ] 핵심 재료 계량&#10;- [ ] ..."></textarea>
+<textarea id="mustShots" class="tall" placeholder="- [ ] ..."></textarea>
 </div>
 
 <div class="card" id="s8">
@@ -122,119 +116,243 @@ textarea{min-height:80px;resize:vertical}
 <label>제목 후보</label>
 <textarea id="titles" placeholder="1. ...&#10;2. ..."></textarea>
 <label>썸네일 방향</label>
-<input type="text" id="thumbnail" placeholder="예: 단면 클로즈업 + 문구 하나">
+<input type="text" id="thumbnail">
 </div>
 
 <div class="card" id="s9">
 <h2>9. 완료 전 남은 확인</h2>
-<textarea id="remaining" placeholder="- [ ] 제품 구성 확인&#10;- [ ] ..."></textarea>
+<textarea id="remaining" placeholder="- [ ] ..."></textarea>
 </div>
 
-<button class="btn" onclick="loadExample()" style="background:#4CAF50;margin-bottom:8px">📋 유부김밥 예시 불러오기</button>
-<button class="btn" onclick="generate()">마크다운 생성</button>
-<button class="btn btn-secondary copy-btn" onclick="copyOutput()" id="copyBtn" style="display:none">클립보드에 복사</button>
-
+<div class="btn-row">
+<button class="btn btn-green" onclick="loadExample()">📋 유부김밥 예시</button>
+<button class="btn btn-gray" onclick="clearAll()">🗑 초기화</button>
+</div>
+<button class="btn" onclick="generate()">📝 마크다운 생성</button>
+<div class="btn-row" id="afterGen" style="display:none">
+<button class="btn btn-green" onclick="copyOutput()">📋 복사</button>
+<button class="btn btn-gray" onclick="downloadMd()">💾 .md 다운로드</button>
+</div>
 <div class="output" id="output" style="display:none"></div>
 </div>
 
 <script>
-function val(id){return document.getElementById(id).value.trim();}
-function generate(){
-  const d = val('dishName') || '[요리명]';
-  const lines = [];
-  lines.push(`# ${d} 영상 콘티 & 스크립트`);
-  lines.push(`작성일: ${val('writeDate')}`);
-  lines.push(`현재 상태: 콘티 초안`);
-  lines.push(`예상 편집 길이: ${val('editLength')}`);
-  lines.push(`촬영 제약: ${val('constraints')}`);
-  lines.push(``);
-  lines.push(`## 1. 콘셉트`);
-  lines.push(`한 문장: ${val('concept1')}`);
-  lines.push(``);
-  lines.push(`핵심 3가지:`);
-  lines.push(val('concept3'));
-  lines.push(``);
-  lines.push(`- 시청자가 얻는 것: ${val('viewerGain')}`);
-  lines.push(`- 이번에 확인할 점: ${val('toVerify')}`);
-  lines.push(``);
-  lines.push(`## 2. 촬영 전 확인·기입`);
-  lines.push(val('checklist'));
-  lines.push(``);
-  lines.push(`## 3. 재료·도구`);
-  lines.push(`### 기본형 재료`);
-  lines.push(val('ingredients'));
-  lines.push(``);
-  lines.push(`### 도구`);
-  lines.push(val('tools'));
-  if(val('variation')){lines.push(``);lines.push(`### 응용형: ${val('variation')}`);}
-  lines.push(``);
-  lines.push(`## 4. 조리 순서`);
-  lines.push(val('cookSteps'));
-  lines.push(``);
-  lines.push(`- 실패 방지 포인트: ${val('failPoint')}`);
-  lines.push(``);
-  lines.push(`## 5. 영상 콘티`);
-  const segs=[['5-1. 오프닝','seg1'],['5-2. 재료·분량','seg2'],['5-3. 준비·실패방지','seg3'],['5-4. 핵심 조리','seg4'],['5-5. 꺼내기·마무리','seg5'],['5-6. 응용형','seg6'],['5-7. 완성량·플레이팅','seg7'],['5-8. 시식·마무리','seg8']];
-  segs.forEach(([t,id])=>{
-    const v=val(id);
-    if(v){lines.push(`### ${t}`);lines.push(v);lines.push(``);}
-  });
-  lines.push(`## 6. 실제 촬영 순서`);
-  lines.push(val('shootOrder'));
-  lines.push(``);
-  lines.push(`## 7. 꼭 확보할 장면`);
-  lines.push(val('mustShots'));
-  lines.push(``);
-  lines.push(`## 8. 제목·썸네일`);
-  lines.push(`### 제목 후보`);
-  lines.push(val('titles'));
-  lines.push(``);
-  lines.push(`썸네일: ${val('thumbnail')}`);
-  lines.push(``);
-  lines.push(`## 9. 완료 전 남은 확인`);
-  lines.push(val('remaining'));
+const SEGMENTS=[
+ ['5-1. 오프닝','seg1'],
+ ['5-2. 재료·분량','seg2'],
+ ['5-3. 준비·실패방지','seg3'],
+ ['5-4. 핵심 조리','seg4'],
+ ['5-5. 꺼내기·마무리','seg5'],
+ ['5-6. 응용형 (선택)','seg6'],
+ ['5-7. 완성량·플레이팅','seg7'],
+ ['5-8. 시식·마무리','seg8'],
+];
+const FIELDS=['time','screen','script','subtitle'];
+const FIELD_LABELS={time:'시간',screen:'화면',script:'멘트',subtitle:'자막'};
 
-  const out = lines.join('\n');
-  const el = document.getElementById('output');
-  el.textContent = out;
+// 세그먼트 입력란 생성
+(function(){
+  const c=document.getElementById('segments');
+  SEGMENTS.forEach(([title,prefix])=>{
+    const div=document.createElement('div');
+    div.className='seg-box';
+    let h=`<h4>${title}</h4><div class="grid2">`;
+    FIELDS.forEach(f=>{
+      h+=`<div><label>${FIELD_LABELS[f]}</label><input type="text" id="${prefix}_${f}" placeholder="${FIELD_LABELS[f]}"></div>`;
+    });
+    h+='</div>';
+    div.innerHTML=h;
+    c.appendChild(div);
+  });
+})();
+
+// 자동 저장
+const ALL_IDS=['dishName','writeDate','editLength','constraints','concept1','concept3','viewerGain','toVerify','checklist','ingredients','tools','variation','cookSteps','failPoint','shootOrder','mustShots','titles','thumbnail','remaining'];
+SEGMENTS.forEach(([t,p])=>FIELDS.forEach(f=>ALL_IDS.push(`${p}_${f}`)));
+
+function saveAll(){
+  const data={};
+  ALL_IDS.forEach(id=>{const el=document.getElementById(id);if(el)data[id]=el.value;});
+  localStorage.setItem('cookContiV2',JSON.stringify(data));
+  document.getElementById('autosaveMsg').textContent='✓ 자동 저장됨 '+new Date().toLocaleTimeString();
+}
+function restoreAll(){
+  try{
+    const data=JSON.parse(localStorage.getItem('cookContiV2')||'{}');
+    ALL_IDS.forEach(id=>{const el=document.getElementById(id);if(el&&data[id]!==undefined)el.value=data[id];});
+    if(Object.keys(data).length>0)document.getElementById('autosaveMsg').textContent='✓ 이전 입력 복원됨';
+  }catch(e){}
+}
+ALL_IDS.forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('input',()=>{clearTimeout(window._st);window._st=setTimeout(saveAll,800);});
+});
+document.getElementById('writeDate').value=new Date().toISOString().slice(0,10);
+restoreAll();
+
+function val(id){const el=document.getElementById(id);return el?el.value.trim():'';}
+function segVal(prefix){
+  const o={};
+  FIELDS.forEach(f=>o[f]=val(`${prefix}_${f}`));
+  return o;
+}
+
+function loadExample(){
+  const set=(id,v)=>{document.getElementById(id).value=v;};
+  set('dishName','유부김밥');
+  set('editLength','5~7분');
+  set('constraints','얼굴 출연 없음, 고정 탑뷰 기본, 완성품 45도 클로즈업');
+  set('concept1','유부초밥 하나씩 채우기 귀찮은 사람을 위해 세트 양념과 김밥틀로 한 줄씩 만든다');
+  set('concept3','1. 밥 간 준비 줄이기 — 세트 양념 사용 장면\n2. 원통 모양 쉽게 잡기 — 김밥틀 사용 장면\n3. 한 팩으로 나오는 실제 수량 — 완성 줄 수 확인');
+  set('viewerGain','김밥 싸는 부담 줄이기');
+  set('toVerify','한 팩으로 몇 줄 나오는지, 지그재그 단면');
+  set('checklist','- [ ] 제품명 / 한 팩 구성: [확인 필요]\n- [ ] 실제 유부 개수: [확인 필요]개\n- [ ] 설명서 권장 밥량: [확인 필요]\n- [ ] 실제 지은 밥 사용량: [확인 필요]g\n- [ ] 성형틀 제품·크기: [확인 필요]');
+  set('ingredients','- 유부초밥 세트 1팩\n- 지은 밥 (설명서 권장량 기준, 실측 예정)\n- 김밥용 김');
+  set('tools','- 김밥 성형틀\n- 저울\n- 볼·주걱\n- 도마·칼');
+  set('variation','스리라차 버전 (한입 테스트 후 결정)');
+  set('cookSteps','1. 유부 개수 세고 설명서 밥 권장량 확인\n2. 지은 밥 계량하고 양념으로 간하기\n3. 유부 물기 조절 (과도한 조미액은 빼되 촉촉함은 남기기)\n4. 밥 절반 깔고 통삼각 유부 지그재그 배치\n5. 나머지 밥 덮고 틀로 성형\n6. 틀에서 꺼내 김 위에 놓고 김으로 감싸기\n7. 김 끝은 밥풀로 고정');
+  set('failPoint','과도한 조미액은 빼되 촉촉함은 남기기 / 김 끝은 밥풀 얇게 펴서 고정');
+  const segs={
+    seg1:{time:'0:00~0:20',screen:'완성 단면 → 틀에서 꺼내기 → 김 감싸기',script:'유부초밥 하나씩 채우기 귀찮잖아요. 세트 양념이랑 김밥틀로 한 줄씩 만들어볼게요.',subtitle:'한 팩으로 몇 줄 나오는지도 확인'},
+    seg2:{time:'0:20~1:00',screen:'포장·설명서 → 유부 개수 → 밥 계량',script:'유부가 몇 개 들어있는지, 밥은 얼마나 필요한지 확인합니다.',subtitle:'제품명, 유부 개수, 밥 g'},
+    seg3:{time:'1:00~1:45',screen:'밥 양념 → 유부 물기 짜기',script:'밥 간은 세트 양념으로. 유부는 물기를 살짝 짜줍니다.',subtitle:'조미액은 밥에 넣지 않기'},
+    seg4:{time:'1:45~2:50',screen:'밥 절반 → 유부 지그재그 → 밥 덮기',script:'밥 절반 깔고 유부를 지그재그로 놓습니다.',subtitle:'첫 줄 분량 기록'},
+    seg5:{time:'2:50~3:50',screen:'틀로 성형 → 꺼내기 → 김 감싸기 → 밥풀 고정',script:'틀로 눌러 모양 잡고 김으로 감쌉니다.',subtitle:'이음매 아래로'},
+    seg6:{time:'3:50~4:20',screen:'스리라차 한입 테스트 → 유부 위 소량',script:'스리라차 버전도 만들어봅니다.',subtitle:'맛 확인 후 결정'},
+    seg7:{time:'4:20~5:10',screen:'완성 전체 → 썰기 → 단면 클로즈업',script:'한 팩으로 몇 줄 나왔는지 확인합니다.',subtitle:'실제 수량 · 잔량'},
+    seg8:{time:'5:10~6:00',screen:'시식 (손만)',script:'세트 양념으로 간하고 틀로 모양 잡으니 편했어요.',subtitle:''},
+  };
+  Object.keys(segs).forEach(p=>{
+    FIELDS.forEach(f=>set(`${p}_${f}`,segs[p][f]||''));
+  });
+  set('shootOrder','1. 포장·재료·유부 개수·밥 계량\n2. 밥 양념·유부 물기 조절\n3. 기본형 첫 줄 전 과정\n4. 응용형 (필요시)\n5. 완성·썰기·단면·썸네일\n6. 시식');
+  set('mustShots','- [ ] 밥 양념 장면\n- [ ] 유부 물기 조절 전후\n- [ ] 유부 지그재그 배치\n- [ ] 틀에서 꺼내 김 감싸기 연속\n- [ ] 김 끝 밥풀 고정\n- [ ] 완성 단면\n- [ ] 썸네일용 사진');
+  set('titles','1. 유부초밥 하나씩 채우기 귀찮아서, 김밥으로 만들었습니다\n2. 유부초밥 한 팩으로 김밥 [ ]줄｜양념도 세트 그대로');
+  set('thumbnail','유부 보이는 단면 2~3조각 크게, 문구: 한 팩으로 [ ]줄');
+  set('remaining','- [ ] 제품 구성 확인\n- [ ] 실제 밥량·유부 개수\n- [ ] 총 완성 줄 수·잔량');
+  saveAll();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function clearAll(){
+  if(!confirm('모든 입력을 지울까요?'))return;
+  ALL_IDS.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  localStorage.removeItem('cookContiV2');
+  document.getElementById('writeDate').value=new Date().toISOString().slice(0,10);
+}
+
+function generate(){
+  const warn=document.getElementById('warnBox');
+  const missing=[];
+  if(!val('dishName'))missing.push('요리명');
+  if(!val('cookSteps'))missing.push('조리 순서');
+  if(missing.length>0){
+    warn.style.display='block';
+    warn.innerHTML='⚠️ 다음 항목을 입력해 주세요: <b>'+missing.join(', ')+'</b><br>그래도 생성하려면 다시 눌러주세요.';
+    warn.dataset.confirmed='1';
+    return;
+  }
+  if(warn.dataset.confirmed!=='1'&&!val('concept1')){
+    warn.style.display='block';
+    warn.innerHTML='⚠️ 콘셉트가 비어 있습니다. 그래도 생성하려면 다시 눌러주세요.';
+    warn.dataset.confirmed='1';
+    return;
+  }
+  warn.style.display='none';
+  warn.dataset.confirmed='';
+
+  const d=val('dishName');
+  const L=[];
+  L.push(`# ${d} 영상 콘티 & 스크립트`);
+  L.push(`작성일: ${val('writeDate')}`);
+  L.push(`현재 상태: 콘티 초안`);
+  L.push(`예상 편집 길이: ${val('editLength')||'[작성 필요]'}`);
+  L.push(`촬영 제약: ${val('constraints')||'[작성 필요]'}`);
+  L.push(``);
+  L.push(`## 1. 콘셉트`);
+  L.push(`한 문장: ${val('concept1')||'[작성 필요]'}`);
+  L.push(``);
+  L.push(`핵심 3가지:`);
+  L.push(val('concept3')||'[작성 필요]');
+  L.push(``);
+  L.push(`- 시청자가 얻는 것: ${val('viewerGain')||'[작성 필요]'}`);
+  L.push(`- 이번에 확인할 점: ${val('toVerify')||'[작성 필요]'}`);
+  L.push(``);
+  L.push(`## 2. 촬영 전 확인·기입`);
+  L.push(val('checklist')||'[작성 필요]');
+  L.push(``);
+  L.push(`## 3. 재료·도구`);
+  L.push(`### 기본형 재료`);
+  L.push(val('ingredients')||'[작성 필요]');
+  L.push(``);
+  L.push(`### 도구`);
+  L.push(val('tools')||'[작성 필요]');
+  if(val('variation')){L.push(``);L.push(`### 응용형: ${val('variation')}`);}
+  L.push(``);
+  L.push(`## 4. 조리 순서`);
+  L.push(val('cookSteps'));
+  L.push(``);
+  L.push(`- 실패 방지 포인트: ${val('failPoint')||'[작성 필요]'}`);
+  L.push(``);
+  L.push(`## 5. 영상 콘티`);
+  SEGMENTS.forEach(([title,prefix],idx)=>{
+    const s=segVal(prefix);
+    const isOptional = prefix==='seg6';
+    const hasAny = s.time||s.screen||s.script||s.subtitle;
+    if(!hasAny && isOptional) return; // 응용형만 생략
+    L.push(`### ${title}`);
+    if(!hasAny){
+      L.push('[작성 필요]');
+    }else{
+      if(s.time)L.push(`- 시간: ${s.time}`);
+      if(s.screen)L.push(`- 화면: ${s.screen}`);
+      if(s.script)L.push(`- 멘트: ${s.script}`);
+      if(s.subtitle)L.push(`- 자막: ${s.subtitle}`);
+    }
+    L.push(``);
+  });
+  L.push(`## 6. 실제 촬영 순서`);
+  L.push(val('shootOrder')||'[작성 필요]');
+  L.push(``);
+  L.push(`## 7. 꼭 확보할 장면`);
+  L.push(val('mustShots')||'[작성 필요]');
+  L.push(``);
+  L.push(`## 8. 제목·썸네일`);
+  L.push(`### 제목 후보`);
+  L.push(val('titles')||'[작성 필요]');
+  L.push(``);
+  L.push(`썸네일: ${val('thumbnail')||'[작성 필요]'}`);
+  L.push(``);
+  L.push(`## 9. 완료 전 남은 확인`);
+  L.push(val('remaining')||'[작성 필요]');
+
+  const out=L.join('\n');
+  window._lastMd=out;
+  window._lastTitle=d;
+  const el=document.getElementById('output');
+  el.textContent=out;
   el.style.display='block';
-  document.getElementById('copyBtn').style.display='block';
+  document.getElementById('afterGen').style.display='flex';
   el.scrollIntoView({behavior:'smooth'});
 }
 function copyOutput(){
-  const t=document.getElementById('output').textContent;
+  const t=window._lastMd||'';
+  if(!t)return;
   navigator.clipboard.writeText(t).then(()=>{
-    const b=document.getElementById('copyBtn');
-    b.textContent='복사됨!';
-    setTimeout(()=>b.textContent='클립보드에 복사',1500);
+    alert('✓ 클립보드에 복사됐습니다.');
+  }).catch(()=>{
+    alert('✗ 복사에 실패했습니다. .md 다운로드를 이용해 주세요.');
   });
 }
-// 오늘 날짜 자동 입력
-document.getElementById('writeDate').value = new Date().toISOString().slice(0,10);
-
-function loadExample(){
-  document.getElementById('dishName').value = '유부김밥';
-  document.getElementById('editLength').value = '5~7분';
-  document.getElementById('constraints').value = '얼굴 출연 없음, 고정 탑뷰 기본, 완성품 45도 클로즈업';
-  document.getElementById('concept1').value = '유부초밥 하나씩 채우기 귀찮은 사람을 위해 세트 양념과 김밥틀로 한 줄씩 만든다';
-  document.getElementById('concept3').value = '1. 밥 간 준비 줄이기 — 세트 양념 사용 장면\n2. 원통 모양 쉽게 잡기 — 김밥틀 사용 장면\n3. 한 팩으로 나오는 실제 수량 — 완성 줄 수 확인';
-  document.getElementById('viewerGain').value = '김밥 싸는 부담 줄이기';
-  document.getElementById('toVerify').value = '한 팩으로 몇 줄 나오는지, 지그재그 단면';
-  document.getElementById('checklist').value = '- [ ] 제품명 / 한 팩 구성: \n- [ ] 실제 유부 개수: \n- [ ] 설명서 권장 밥량: \n- [ ] 실제 지은 밥 사용량: g\n- [ ] 성형틀 제품·크기: ';
-  document.getElementById('ingredients').value = '- 유부초밥 세트 1팩\n- 지은 밥 (설명서 기준)\n- 김밥용 김';
-  document.getElementById('tools').value = '- 김밥 성형틀\n- 저울\n- 볼·주걱\n- 도마·칼';
-  document.getElementById('variation').value = '스리라차 버전 (한입 테스트 후 결정)';
-  document.getElementById('cookSteps').value = '1. 유부 개수 세고 밥 권장량 확인\n2. 밥 계량하고 양념으로 간하기\n3. 유부 물기 짜기\n4. 밥 절반 깔고 유부 지그재그 배치\n5. 나머지 밥 덮고 틀로 성형\n6. 김으로 감싸기';
-  document.getElementById('failPoint').value = '유부 물기 너무 짜지 않기, 김 끝은 밥풀로 고정';
-  document.getElementById('seg1').value = '0:00~0:20 | 완성 단면 → 틀에서 꺼내기 | 유부초밥 하나씩 채우기 귀찮잖아요';
-  document.getElementById('seg4').value = '1:45~2:50 | 밥 절반→유부 지그재그→밥 덮기 | 유부는 자르지 않고 방향 번갈아 놓기';
-  document.getElementById('seg5').value = '2:50~3:50 | 틀로 누르기→김 감싸기 | 김 끝은 밥풀로 고정';
-  document.getElementById('shootOrder').value = '1. 포장·재료·유부 개수·밥 계량\n2. 밥 양념·유부 물기 조절\n3. 기본형 첫 줄 전 과정\n4. 완성·썰기·단면 촬영\n5. 시식';
-  document.getElementById('mustShots').value = '- [ ] 유부 실제 개수\n- [ ] 유부 지그재그 배치\n- [ ] 틀에서 꺼내 김 감싸기 연속 장면\n- [ ] 완성 단면';
-  document.getElementById('titles').value = '1. 유부초밥 하나씩 채우기 귀찮아서, 김밥으로 만들었습니다\n2. 유부초밥 한 팩으로 김밥 [ ]줄｜양념도 세트 그대로';
-  document.getElementById('thumbnail').value = '유부 보이는 단면 2~3조각 크게, 문구: 한 팩으로 [ ]줄';
-  document.getElementById('remaining').value = '- [ ] 제품 구성 확인\n- [ ] 실제 밥량·유부 개수\n- [ ] 총 완성 줄 수';
-  window.scrollTo({top:0,behavior:'smooth'});
+function downloadMd(){
+  const t=window._lastMd||'';
+  if(!t)return;
+  const title=(window._lastTitle||'conti').replace(/[^\w가-힣]+/g,'-');
+  const blob=new Blob([t],{type:'text/markdown;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=title+'-conti.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 </script>
 </body>
