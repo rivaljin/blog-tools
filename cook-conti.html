@@ -130,6 +130,7 @@ textarea{min-height:80px;resize:vertical}
 <textarea id="remaining" placeholder="- [ ] 제품 구성 확인&#10;- [ ] ..."></textarea>
 </div>
 
+<button class="btn" onclick="loadExample()" style="background:#4CAF50;margin-bottom:8px">📋 유부김밥 예시 불러오기</button>
 <button class="btn" onclick="generate()">마크다운 생성</button>
 <button class="btn btn-secondary copy-btn" onclick="copyOutput()" id="copyBtn" style="display:none">클립보드에 복사</button>
 
@@ -210,6 +211,31 @@ function copyOutput(){
 }
 // 오늘 날짜 자동 입력
 document.getElementById('writeDate').value = new Date().toISOString().slice(0,10);
+
+function loadExample(){
+  document.getElementById('dishName').value = '유부김밥';
+  document.getElementById('editLength').value = '5~7분';
+  document.getElementById('constraints').value = '얼굴 출연 없음, 고정 탑뷰 기본, 완성품 45도 클로즈업';
+  document.getElementById('concept1').value = '유부초밥 하나씩 채우기 귀찮은 사람을 위해 세트 양념과 김밥틀로 한 줄씩 만든다';
+  document.getElementById('concept3').value = '1. 밥 간 준비 줄이기 — 세트 양념 사용 장면\n2. 원통 모양 쉽게 잡기 — 김밥틀 사용 장면\n3. 한 팩으로 나오는 실제 수량 — 완성 줄 수 확인';
+  document.getElementById('viewerGain').value = '김밥 싸는 부담 줄이기';
+  document.getElementById('toVerify').value = '한 팩으로 몇 줄 나오는지, 지그재그 단면';
+  document.getElementById('checklist').value = '- [ ] 제품명 / 한 팩 구성: \n- [ ] 실제 유부 개수: \n- [ ] 설명서 권장 밥량: \n- [ ] 실제 지은 밥 사용량: g\n- [ ] 성형틀 제품·크기: ';
+  document.getElementById('ingredients').value = '- 유부초밥 세트 1팩\n- 지은 밥 (설명서 기준)\n- 김밥용 김';
+  document.getElementById('tools').value = '- 김밥 성형틀\n- 저울\n- 볼·주걱\n- 도마·칼';
+  document.getElementById('variation').value = '스리라차 버전 (한입 테스트 후 결정)';
+  document.getElementById('cookSteps').value = '1. 유부 개수 세고 밥 권장량 확인\n2. 밥 계량하고 양념으로 간하기\n3. 유부 물기 짜기\n4. 밥 절반 깔고 유부 지그재그 배치\n5. 나머지 밥 덮고 틀로 성형\n6. 김으로 감싸기';
+  document.getElementById('failPoint').value = '유부 물기 너무 짜지 않기, 김 끝은 밥풀로 고정';
+  document.getElementById('seg1').value = '0:00~0:20 | 완성 단면 → 틀에서 꺼내기 | 유부초밥 하나씩 채우기 귀찮잖아요';
+  document.getElementById('seg4').value = '1:45~2:50 | 밥 절반→유부 지그재그→밥 덮기 | 유부는 자르지 않고 방향 번갈아 놓기';
+  document.getElementById('seg5').value = '2:50~3:50 | 틀로 누르기→김 감싸기 | 김 끝은 밥풀로 고정';
+  document.getElementById('shootOrder').value = '1. 포장·재료·유부 개수·밥 계량\n2. 밥 양념·유부 물기 조절\n3. 기본형 첫 줄 전 과정\n4. 완성·썰기·단면 촬영\n5. 시식';
+  document.getElementById('mustShots').value = '- [ ] 유부 실제 개수\n- [ ] 유부 지그재그 배치\n- [ ] 틀에서 꺼내 김 감싸기 연속 장면\n- [ ] 완성 단면';
+  document.getElementById('titles').value = '1. 유부초밥 하나씩 채우기 귀찮아서, 김밥으로 만들었습니다\n2. 유부초밥 한 팩으로 김밥 [ ]줄｜양념도 세트 그대로';
+  document.getElementById('thumbnail').value = '유부 보이는 단면 2~3조각 크게, 문구: 한 팩으로 [ ]줄';
+  document.getElementById('remaining').value = '- [ ] 제품 구성 확인\n- [ ] 실제 밥량·유부 개수\n- [ ] 총 완성 줄 수';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 </script>
 </body>
 </html>
