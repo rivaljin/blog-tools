@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cook with Nampy — 콘티 작성 도우미</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;background:#f5f5f5;color:#333;line-height:1.6}
+.container{max-width:900px;margin:0 auto;padding:20px}
+h1{font-size:22px;margin-bottom:6px}
+.subtitle{color:#666;font-size:14px;margin-bottom:20px}
+.card{background:#fff;border-radius:8px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.card h2{font-size:17px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e8a838}
+.card h3{font-size:15px;margin:14px 0 8px;color:#555}
+label{display:block;font-size:13px;font-weight:bold;margin:10px 0 4px;color:#555}
+input[type=text],textarea{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit}
+textarea{min-height:80px;resize:vertical}
+.hint{font-size:12px;color:#999;margin-top:2px}
+.row{display:flex;gap:10px}
+.row>div{flex:1}
+.btn{background:#e8a838;color:#fff;border:none;padding:12px 24px;font-size:16px;border-radius:6px;cursor:pointer;width:100%;margin-top:10px}
+.btn:hover{background:#d6962a}
+.btn-secondary{background:#666;margin-top:8px}
+.output{background:#1e1e1e;color:#d4d4d4;border-radius:8px;padding:20px;margin-top:16px;white-space:pre-wrap;font-family:'Consolas','Monaco',monospace;font-size:13px;max-height:600px;overflow-y:auto}
+.copy-btn{background:#4CAF50;margin-top:10px}
+.section-nav{position:sticky;top:0;background:#f5f5f5;padding:10px 0;z-index:10;margin-bottom:10px}
+.section-nav a{font-size:12px;margin-right:8px;color:#e8a838;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🍳 Cook with Nampy — 콘티 작성 도우미</h1>
+<p class="subtitle">9개 섹션 템플릿으로 영상 콘티를 작성합니다. v1.0</p>
+
+<div class="section-nav">
+<a href="#s0">기본</a><a href="#s1">1.콘셉트</a><a href="#s2">2.촬영전확인</a><a href="#s3">3.재료도구</a><a href="#s4">4.조리순서</a><a href="#s5">5.영상콘티</a><a href="#s6">6.촬영순서</a><a href="#s7">7.필수장면</a><a href="#s8">8.제목썸네일</a><a href="#s9">9.남은확인</a>
+</div>
+
+<div class="card" id="s0">
+<h2>기본 정보</h2>
+<label>요리명</label>
+<input type="text" id="dishName" placeholder="예: 유부김밥">
+<label>작성일</label>
+<input type="text" id="writeDate" placeholder="2026-10-12">
+<label>예상 편집 길이</label>
+<input type="text" id="editLength" placeholder="예: 5~7분">
+<label>촬영 제약</label>
+<input type="text" id="constraints" placeholder="예: 얼굴 출연 없음, 고정 탑뷰">
+</div>
+
+<div class="card" id="s1">
+<h2>1. 콘셉트</h2>
+<label>한 문장 (누구의 어떤 불편함을 어떤 방법으로)</label>
+<input type="text" id="concept1" placeholder="예: 유부초밥 하나씩 채우기 귀찮은 사람을 위해 김밥틀로 한 줄씩 만든다">
+<label>핵심 3가지</label>
+<textarea id="concept3" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
+<label>시청자가 얻는 것</label>
+<input type="text" id="viewerGain">
+<label>이번에 확인할 점</label>
+<input type="text" id="toVerify">
+</div>
+
+<div class="card" id="s2">
+<h2>2. 촬영 전 확인·기입</h2>
+<label>체크리스트 (한 줄에 하나씩)</label>
+<textarea id="checklist" placeholder="- [ ] 제품명:&#10;- [ ] 유부 개수:&#10;- [ ] 밥량:"></textarea>
+<p class="hint">숫자는 실측 후 기입. 임의로 채우지 않기.</p>
+</div>
+
+<div class="card" id="s3">
+<h2>3. 재료·도구</h2>
+<label>기본형 재료 (한 줄에 하나씩: 재료 - 분량)</label>
+<textarea id="ingredients" placeholder="- 유부초밥 세트 1팩&#10;- 지은 밥 00g"></textarea>
+<label>도구</label>
+<textarea id="tools" placeholder="- 김밥 성형틀&#10;- 저울"></textarea>
+<label>응용형 (있으면)</label>
+<input type="text" id="variation" placeholder="예: 스리라차 버전">
+</div>
+
+<div class="card" id="s4">
+<h2>4. 조리 순서</h2>
+<label>단계별 (한 줄에 하나씩)</label>
+<textarea id="cookSteps" placeholder="1. 유부 개수 세기&#10;2. 밥 양념하기&#10;3. ..."></textarea>
+<label>실패 방지 포인트</label>
+<input type="text" id="failPoint">
+</div>
+
+<div class="card" id="s5">
+<h2>5. 영상 콘티</h2>
+<p class="hint">각 구간: 시간 | 화면 | 멘트 형식으로 입력</p>
+<label>5-1. 오프닝</label>
+<textarea id="seg1" placeholder="0:00~0:20 | 완성 단면 | 유부초밥 하나씩 채우기 귀찮잖아요"></textarea>
+<label>5-2. 재료·분량</label>
+<textarea id="seg2"></textarea>
+<label>5-3. 준비·실패방지</label>
+<textarea id="seg3"></textarea>
+<label>5-4. 핵심 조리</label>
+<textarea id="seg4"></textarea>
+<label>5-5. 꺼내기·마무리</label>
+<textarea id="seg5"></textarea>
+<label>5-6. 응용형 (없으면 비워두기)</label>
+<textarea id="seg6"></textarea>
+<label>5-7. 완성량·플레이팅</label>
+<textarea id="seg7"></textarea>
+<label>5-8. 시식·마무리</label>
+<textarea id="seg8"></textarea>
+</div>
+
+<div class="card" id="s6">
+<h2>6. 실제 촬영 순서</h2>
+<textarea id="shootOrder" placeholder="1. 재료·포장·계량&#10;2. 조리 순서대로&#10;3. ..."></textarea>
+</div>
+
+<div class="card" id="s7">
+<h2>7. 꼭 확보할 장면</h2>
+<textarea id="mustShots" placeholder="- [ ] 완성 오프닝 컷&#10;- [ ] 핵심 재료 계량&#10;- [ ] ..."></textarea>
+</div>
+
+<div class="card" id="s8">
+<h2>8. 제목·썸네일</h2>
+<label>제목 후보</label>
+<textarea id="titles" placeholder="1. ...&#10;2. ..."></textarea>
+<label>썸네일 방향</label>
+<input type="text" id="thumbnail" placeholder="예: 단면 클로즈업 + 문구 하나">
+</div>
+
+<div class="card" id="s9">
+<h2>9. 완료 전 남은 확인</h2>
+<textarea id="remaining" placeholder="- [ ] 제품 구성 확인&#10;- [ ] ..."></textarea>
+</div>
+
+<button class="btn" onclick="generate()">마크다운 생성</button>
+<button class="btn btn-secondary copy-btn" onclick="copyOutput()" id="copyBtn" style="display:none">클립보드에 복사</button>
+
+<div class="output" id="output" style="display:none"></div>
+</div>
+
+<script>
+function val(id){return document.getElementById(id).value.trim();}
+function generate(){
+  const d = val('dishName') || '[요리명]';
+  const lines = [];
+  lines.push(`# ${d} 영상 콘티 & 스크립트`);
+  lines.push(`작성일: ${val('writeDate')}`);
+  lines.push(`현재 상태: 콘티 초안`);
+  lines.push(`예상 편집 길이: ${val('editLength')}`);
+  lines.push(`촬영 제약: ${val('constraints')}`);
+  lines.push(``);
+  lines.push(`## 1. 콘셉트`);
+  lines.push(`한 문장: ${val('concept1')}`);
+  lines.push(``);
+  lines.push(`핵심 3가지:`);
+  lines.push(val('concept3'));
+  lines.push(``);
+  lines.push(`- 시청자가 얻는 것: ${val('viewerGain')}`);
+  lines.push(`- 이번에 확인할 점: ${val('toVerify')}`);
+  lines.push(``);
+  lines.push(`## 2. 촬영 전 확인·기입`);
+  lines.push(val('checklist'));
+  lines.push(``);
+  lines.push(`## 3. 재료·도구`);
+  lines.push(`### 기본형 재료`);
+  lines.push(val('ingredients'));
+  lines.push(``);
+  lines.push(`### 도구`);
+  lines.push(val('tools'));
+  if(val('variation')){lines.push(``);lines.push(`### 응용형: ${val('variation')}`);}
+  lines.push(``);
+  lines.push(`## 4. 조리 순서`);
+  lines.push(val('cookSteps'));
+  lines.push(``);
+  lines.push(`- 실패 방지 포인트: ${val('failPoint')}`);
+  lines.push(``);
+  lines.push(`## 5. 영상 콘티`);
+  const segs=[['5-1. 오프닝','seg1'],['5-2. 재료·분량','seg2'],['5-3. 준비·실패방지','seg3'],['5-4. 핵심 조리','seg4'],['5-5. 꺼내기·마무리','seg5'],['5-6. 응용형','seg6'],['5-7. 완성량·플레이팅','seg7'],['5-8. 시식·마무리','seg8']];
+  segs.forEach(([t,id])=>{
+    const v=val(id);
+    if(v){lines.push(`### ${t}`);lines.push(v);lines.push(``);}
+  });
+  lines.push(`## 6. 실제 촬영 순서`);
+  lines.push(val('shootOrder'));
+  lines.push(``);
+  lines.push(`## 7. 꼭 확보할 장면`);
+  lines.push(val('mustShots'));
+  lines.push(``);
+  lines.push(`## 8. 제목·썸네일`);
+  lines.push(`### 제목 후보`);
+  lines.push(val('titles'));
+  lines.push(``);
+  lines.push(`썸네일: ${val('thumbnail')}`);
+  lines.push(``);
+  lines.push(`## 9. 완료 전 남은 확인`);
+  lines.push(val('remaining'));
+
+  const out = lines.join('\n');
+  const el = document.getElementById('output');
+  el.textContent = out;
+  el.style.display='block';
+  document.getElementById('copyBtn').style.display='block';
+  el.scrollIntoView({behavior:'smooth'});
+}
+function copyOutput(){
+  const t=document.getElementById('output').textContent;
+  navigator.clipboard.writeText(t).then(()=>{
+    const b=document.getElementById('copyBtn');
+    b.textContent='복사됨!';
+    setTimeout(()=>b.textContent='클립보드에 복사',1500);
+  });
+}
+// 오늘 날짜 자동 입력
+document.getElementById('writeDate').value = new Date().toISOString().slice(0,10);
+</script>
+</body>
+</html>
