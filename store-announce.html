@@ -3,98 +3,130 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>매장 안내 방송</title>
+<title>매장 안내 패널</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;background:#1a1a2e;color:#eee;min-height:100vh;padding:20px}
-.container{max-width:700px;margin:0 auto}
-h1{font-size:24px;text-align:center;margin-bottom:8px}
-.subtitle{text-align:center;color:#aaa;font-size:14px;margin-bottom:30px}
-.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
-.announce-btn{border:none;border-radius:16px;padding:36px 16px;font-size:22px;font-weight:bold;cursor:pointer;color:#fff;line-height:1.5;transition:transform .1s, opacity .1s;font-family:inherit}
-.announce-btn:active{transform:scale(.97)}
-.announce-btn small{display:block;font-size:14px;font-weight:normal;opacity:.85;margin-top:8px}
-.btn-wait{background:#e67e22}
-.btn-pack{background:#3498db}
-.btn-ready{background:#27ae60}
-.btn-thanks{background:#8e44ad}
-.custom{background:#16213e;border-radius:16px;padding:20px;margin-bottom:24px}
-.custom h2{font-size:16px;margin-bottom:12px}
-.custom-row{display:flex;gap:8px}
-.custom-row input{flex:1;padding:14px;border:1px solid #444;border-radius:8px;font-size:16px;background:#0f3460;color:#eee;font-family:inherit}
-.custom-row button{background:#e8a838;color:#fff;border:none;padding:14px 24px;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;font-family:inherit}
-.settings{background:#16213e;border-radius:16px;padding:20px}
-.settings h2{font-size:16px;margin-bottom:12px}
-.settings label{display:block;font-size:13px;color:#aaa;margin:10px 0 4px}
-.settings input[type=range]{width:100%}
-.settings .val{color:#e8a838;font-weight:bold}
-#status{text-align:center;color:#2ecc71;font-size:15px;min-height:24px;margin-bottom:16px}
-.stop-btn{width:100%;background:#c0392b;color:#fff;border:none;padding:16px;border-radius:12px;font-size:18px;font-weight:bold;cursor:pointer;margin-bottom:24px;font-family:inherit}
+html,body{height:100%}
+body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;background:#101216;color:#eee;overflow:hidden}
+.panel{position:relative;height:100dvh;display:flex;flex-direction:column;gap:10px;padding:14px;background:linear-gradient(160deg,#2b2f38 0%,#1d2027 55%,#17191f 100%);border:1px solid #3d434f;box-shadow:inset 0 1px 0 rgba(255,255,255,.08), inset 0 0 40px rgba(0,0,0,.45)}
+.screw{position:absolute;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#9aa3b2,#4a505c 70%);box-shadow:inset 0 -1px 2px rgba(0,0,0,.7)}
+.screw.tl{top:6px;left:6px}.screw.tr{top:6px;right:6px}.screw.bl{bottom:6px;left:6px}.screw.br{bottom:6px;right:6px}
+.header{display:flex;align-items:center;gap:10px;padding:2px 4px 0}
+.header .logo{font-size:20px}
+.header h1{font-size:17px;letter-spacing:1px;color:#dfe5ee}
+.header .ver{margin-left:2px;font-size:10px;color:#6b7280;font-weight:normal}
+.led-wrap{margin-left:auto;display:flex;align-items:center;gap:7px;background:#12141a;border:1px solid #333845;border-radius:999px;padding:5px 11px}
+#led{width:10px;height:10px;border-radius:50%;background:#4b5563;box-shadow:inset 0 1px 2px rgba(0,0,0,.8);transition:all .15s}
+#led.on{background:#2ecc71;box-shadow:0 0 10px #2ecc71,0 0 3px #2ecc71}
+#status{font-size:12px;color:#9fb0c3;min-width:52px;text-align:right}
+.btn-grid{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:12px;min-height:0}
+.announce-btn{position:relative;border:1px solid rgba(0,0,0,.45);border-radius:16px;font-size:clamp(18px,4.2vmin,25px);font-weight:bold;cursor:pointer;color:#fff;line-height:1.45;font-family:inherit;text-shadow:0 1px 2px rgba(0,0,0,.35);transition:transform .05s, box-shadow .05s, filter .15s}
+.announce-btn small{display:block;font-size:clamp(11px,2.4vmin,14px);font-weight:normal;opacity:.88;margin-top:6px;text-shadow:none}
+.btn-wait{background:linear-gradient(180deg,#f39c4d,#e67e22 60%,#d16f1a);box-shadow:0 6px 0 #9e5410,0 12px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn-pack{background:linear-gradient(180deg,#5dade2,#3498db 60%,#2b7cb8);box-shadow:0 6px 0 #1d5c8a,0 12px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn-ready{background:linear-gradient(180deg,#58d68d,#27ae60 60%,#1f9250);box-shadow:0 6px 0 #166b39,0 12px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn-thanks{background:linear-gradient(180deg,#af7ac5,#8e44ad 60%,#77378f);box-shadow:0 6px 0 #552a68,0 12px 20px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.45)}
+.announce-btn:active{transform:translateY(4px)}
+.btn-wait:active{box-shadow:0 2px 0 #9e5410,0 6px 12px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn-pack:active{box-shadow:0 2px 0 #1d5c8a,0 6px 12px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn-ready:active{box-shadow:0 2px 0 #166b39,0 6px 12px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.45)}
+.btn-thanks:active{box-shadow:0 2px 0 #552a68,0 6px 12px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.45)}
+.announce-btn.playing{filter:brightness(1.18);outline:3px solid rgba(255,255,255,.85);outline-offset:-3px}
+.announce-btn .dot{position:absolute;top:10px;right:12px;width:10px;height:10px;border-radius:50%;background:rgba(0,0,0,.35);box-shadow:inset 0 1px 2px rgba(0,0,0,.6)}
+.announce-btn.playing .dot{background:#fff;box-shadow:0 0 10px #fff;animation:blink 0.8s infinite alternate}
+@keyframes blink{from{opacity:1}to{opacity:.45}}
+.deck{background:#14161c;border:1px solid #333845;border-radius:14px;padding:10px 12px;box-shadow:inset 0 2px 8px rgba(0,0,0,.55)}
+.stop-btn{width:100%;background:linear-gradient(180deg,#e74c3c,#c0392b);color:#fff;border:1px solid rgba(0,0,0,.4);padding:11px;border-radius:10px;font-size:15px;font-weight:bold;cursor:pointer;font-family:inherit;box-shadow:0 4px 0 #7e241a,0 8px 14px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.35);margin-bottom:10px}
+.stop-btn:active{transform:translateY(3px);box-shadow:0 1px 0 #7e241a,0 4px 8px rgba(0,0,0,.45)}
+.ctrl-row{display:flex;align-items:center;gap:8px;margin-top:7px}
+.ctrl-row:first-of-type{margin-top:0}
+.ctrl-row label{font-size:12px;color:#9fb0c3;width:34px;flex:none}
+.ctrl-row input[type=range]{flex:1;accent-color:#e8a838;height:20px}
+.ctrl-row .val{font-size:12px;color:#e8a838;font-weight:bold;width:26px;text-align:right;flex:none}
+.custom-row{display:flex;gap:8px;margin-top:10px}
+.custom-row input{flex:1;padding:9px 11px;border:1px solid #333845;border-radius:9px;font-size:13px;background:#0d0f13;color:#eee;font-family:inherit;min-width:0}
+.custom-row button{background:linear-gradient(180deg,#f0b64a,#e8a838);color:#231a04;border:none;padding:9px 16px;border-radius:9px;font-size:13px;font-weight:bold;cursor:pointer;font-family:inherit;box-shadow:0 3px 0 #9a741f}
+.custom-row button:active{transform:translateY(2px);box-shadow:0 1px 0 #9a741f}
 </style>
 </head>
 <body>
-<div class="container">
-<h1>📢 매장 안내 방송</h1>
-<p class="subtitle">버튼을 누르면 안내 음성이 나옵니다</p>
-<div id="status"></div>
+<div class="panel">
+<span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
+
+<div class="header">
+<span class="logo">📢</span>
+<h1>매장 안내 패널 <span class="ver">v3.0</span></h1>
+<div class="led-wrap"><span id="led"></span><span id="status">대기 중</span></div>
+</div>
 
 <div class="btn-grid">
-<button class="announce-btn btn-wait" onclick="playAudio('audio/wait.mp3', this.dataset.label)" data-label="기다려 주세요">
+<button class="announce-btn btn-wait" onclick="playAudio('audio/wait.mp3', this)"><span class="dot"></span>
 ⏳ 기다려 주세요
 <small>준비가 되면 조리완료 버튼을 눌러드리겠습니다</small>
 </button>
-<button class="announce-btn btn-pack" onclick="playAudio('audio/pack.mp3', this.dataset.label)" data-label="포장 중입니다">
+<button class="announce-btn btn-pack" onclick="playAudio('audio/pack.mp3', this)"><span class="dot"></span>
 📦 포장 중입니다
 <small>지금 포장 중입니다</small>
 </button>
-<button class="announce-btn btn-ready" onclick="playAudio('audio/ready.mp3', this.dataset.label)" data-label="음식 나왔습니다">
+<button class="announce-btn btn-ready" onclick="playAudio('audio/ready.mp3', this)"><span class="dot"></span>
 ✅ 음식 나왔습니다
 <small>코드 확인하시고, 안전운전 하세요</small>
 </button>
-<button class="announce-btn btn-thanks" onclick="playAudio('audio/thanks.mp3', this.dataset.label)" data-label="감사합니다">
+<button class="announce-btn btn-thanks" onclick="playAudio('audio/thanks.mp3', this)"><span class="dot"></span>
 🙏 감사합니다
 <small>안전운전 하세요</small>
 </button>
 </div>
 
+<div class="deck">
 <button class="stop-btn" onclick="stopAll()">⏹ 음성 정지</button>
-
-<div class="custom">
-<h2>직접 입력해서 말하기</h2>
+<div class="ctrl-row">
+<label>속도</label>
+<input type="range" id="rate" min="0.6" max="1.4" step="0.05" value="0.9" oninput="document.getElementById('rateVal').textContent=this.value; if(currentAudio) currentAudio.playbackRate=parseFloat(this.value);">
+<span class="val" id="rateVal">0.9</span>
+</div>
+<div class="ctrl-row">
+<label>볼륨</label>
+<input type="range" id="volume" min="0.2" max="1" step="0.1" value="1" oninput="document.getElementById('volVal').textContent=this.value">
+<span class="val" id="volVal">1</span>
+</div>
 <div class="custom-row">
-<input type="text" id="customText" placeholder="할 말을 입력하세요" onkeydown="if(event.key==='Enter')speakCustom()">
+<input type="text" id="customText" placeholder="직접 입력해서 말하기 (브라우저 음성)" onkeydown="if(event.key==='Enter')speakCustom()">
 <button onclick="speakCustom()">말하기</button>
 </div>
 </div>
 
-<div class="settings">
-<h2>음성 설정</h2>
-<label>속도: <span class="val" id="rateVal">0.9</span></label>
-<input type="range" id="rate" min="0.6" max="1.4" step="0.05" value="0.9" oninput="document.getElementById('rateVal').textContent=this.value; if(currentAudio) currentAudio.playbackRate=parseFloat(this.value);">
-<label>볼륨: <span class="val" id="volVal">1.0</span></label>
-<input type="range" id="volume" min="0.2" max="1" step="0.1" value="1" oninput="document.getElementById('volVal').textContent=this.value">
 </div>
-</div>
-
 <script>
 let currentAudio = null;
-function playAudio(src, label){
+let currentBtn = null;
+const LABELS = {'audio/wait.mp3':'기다려 주세요','audio/pack.mp3':'포장 중입니다','audio/ready.mp3':'음식 나왔습니다','audio/thanks.mp3':'감사합니다'};
+function setStatus(txt, on){
+  document.getElementById('status').textContent = txt;
+  document.getElementById('led').className = on ? 'on' : '';
+}
+function clearPlaying(){
+  if(currentBtn){ currentBtn.classList.remove('playing'); currentBtn = null; }
+}
+function playAudio(src, btn){
   stopAll();
   currentAudio = new Audio(src);
+  currentBtn = btn || null;
+  if(currentBtn) currentBtn.classList.add('playing');
   const vol = parseFloat(document.getElementById('volume').value);
   currentAudio.volume = vol;
   currentAudio.playbackRate = parseFloat(document.getElementById('rate').value);
   currentAudio.preservesPitch = true;
-  const st = document.getElementById('status');
-  st.textContent = '🔊 재생 중: ' + label;
-  currentAudio.onended = ()=>{ st.textContent=''; };
-  currentAudio.onerror = ()=>{ st.textContent='⚠️ 음성 파일을 불러오지 못했습니다'; };
+  setStatus('재생 중', true);
+  currentAudio.onended = ()=>{ clearPlaying(); setStatus('대기 중', false); };
+  currentAudio.onerror = ()=>{ clearPlaying(); setStatus('파일 오류', false); };
   currentAudio.play();
 }
 function stopAll(){
   if(currentAudio){ currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
   if('speechSynthesis' in window) speechSynthesis.cancel();
-  document.getElementById('status').textContent='';
+  clearPlaying();
+  setStatus('대기 중', false);
 }
 // 직접 입력용 브라우저 음성 (보조 기능)
 function getVoice(){
@@ -111,14 +143,21 @@ function speakCustom(){
   u.lang = 'ko-KR';
   u.rate = parseFloat(document.getElementById('rate').value);
   u.volume = parseFloat(document.getElementById('volume').value);
-  document.getElementById('status').textContent = '🔊 재생 중: ' + t;
-  u.onend = ()=>{ document.getElementById('status').textContent=''; };
+  setStatus('재생 중', true);
+  u.onend = ()=>{ setStatus('대기 중', false); };
   speechSynthesis.speak(u);
 }
 if('speechSynthesis' in window){
   speechSynthesis.getVoices();
   speechSynthesis.onvoiceschanged = ()=>speechSynthesis.getVoices();
 }
+// 숫자키 1~4 재생, 0/Esc 정지 (창이 선택된 상태일 때)
+document.addEventListener('keydown', (e)=>{
+  if(e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  const btns = document.querySelectorAll('.announce-btn');
+  if(['1','2','3','4'].includes(e.key)) btns[parseInt(e.key)-1].click();
+  if(e.key === '0' || e.key === 'Escape') stopAll();
+});
 </script>
 </body>
 </html>
