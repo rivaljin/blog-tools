@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>블로그 발행 도우미 v3 — Bits with Nampy</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: '맑은 고딕', 'Malgun Gothic', sans-serif; background: #f5f5f5; color: #333; }
+  header { background: #2c3e50; color: white; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; }
+  header .mode-toggle { font-size: 13px; }
+  header .mode-toggle button { padding: 6px 12px; background: #34495e; color: white; border: 1px solid #4a6278; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  header .mode-toggle button.active { background: #27ae60; border-color: #27ae60; }
+  .platform-tabs { display: flex; background: white; border-bottom: 2px solid #ddd; }
+  .platform-tabs .ptab { flex: 1; padding: 14px; text-align: center; cursor: pointer; font-size: 15px; font-weight: bold; border-bottom: 3px solid transparent; }
+  .platform-tabs .ptab.active { border-bottom-color: #27ae60; color: #27ae60; }
+  .platform-tabs .ptab.tistory.active { border-bottom-color: #e74c3c; color: #e74c3c; }
+  .main { max-width: 900px; margin: 0 auto; padding: 20px; }
+  .card { background: white; border-radius: 8px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .card h3 { font-size: 14px; color: #666; margin-bottom: 10px; }
+  .title-display { font-size: 18px; font-weight: bold; margin-bottom: 8px; line-height: 1.5; }
+  .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 8px; margin-bottom: 8px; }
+  .btn-green { background: #27ae60; color: white; }
+  .btn-green:hover { background: #219a52; }
+  .btn-blue { background: #2980b9; color: white; }
+  .btn-blue:hover { background: #2471a3; }
+  .btn-orange { background: #e67e22; color: white; }
+  .btn-orange:hover { background: #d35400; }
+  .btn-gray { background: #95a5a6; color: white; }
+  .btn-gray:hover { background: #7f8c8d; }
+  .preview-box { border: 1px solid #eee; border-radius: 6px; padding: 16px; max-height: 500px; overflow: auto; background: #fff; }
+  .tags-display { font-size: 14px; color: #555; background: #f8f8f8; padding: 10px; border-radius: 4px; margin-bottom: 8px; }
+  .img-guide-item { padding: 10px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .img-guide-item .info { font-size: 13px; }
+  .img-guide-item .pos { color: #e67e22; font-weight: bold; font-size: 12px; }
+  .hidden { display: none !important; }
+  /* 제작자 영역 */
+  #creator-area { border-top: 3px dashed #ccc; margin-top: 20px; padding-top: 16px; }
+  #creator-area .card { background: #f9f9f9; }
+  textarea#md-input { width: 100%; height: 200px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+  input#creator-title, input#creator-tags { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
+  #share-link { width: 100%; padding: 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; background: #f0f0f0; }
+  .warn-box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px; margin: 8px 0; font-size: 13px; }
+  /* 수정 모드 */
+  .edit-area { width: 100%; min-height: 80px; padding: 10px; border: 2px solid #3498db; border-radius: 6px; font-size: 14px; font-family: inherit; line-height: 1.6; }
+  @media (max-width: 768px) { .main { padding: 12px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>📝 블로그 발행 도우미</h1>
+  <div class="mode-toggle">
+    <button id="btn-publisher" class="active" onclick="setMode('publisher')">발행 모드</button>
+    <button id="btn-creator" onclick="setMode('creator')">제작 모드</button>
+  </div>
+</header>
+
+<div class="platform-tabs">
+  <div class="ptab tistory active" data-p="tistory" onclick="setPlatform('tistory')">🟠 티스토리</div>
+  <div class="ptab" data-p="naver" onclick="setPlatform('naver')">🟢 네이버</div>
+</div>
+
+<div class="main">
+  <!-- 경고 표시 -->
+  <div id="warnings"></div>
+
+  <!-- 제목 카드 -->
+  <div class="card">
+    <h3>📌 제목</h3>
+    <div class="title-display" id="title-display"></div>
+    <div id="title-edit-wrap" class="hidden">
+      <input type="text" id="title-edit" class="edit-area" style="min-height:40px;">
+    </div>
+    <button class="btn btn-blue" onclick="copyTitle()">📋 제목 복사</button>
+    <button class="btn btn-gray" id="btn-edit-title" onclick="toggleTitleEdit()">✏️ 문구 수정</button>
+    <button class="btn btn-gray hidden" id="btn-title-restore" onclick="restoreTitle()">↩️ 원본으로</button>
+  </div>
+
+  <!-- 태그 카드 -->
+  <div class="card">
+    <h3>🏷️ 태그 (쉼표 구분)</h3>
+    <div class="tags-display" id="tags-display"></div>
+    <button class="btn btn-blue" onclick="copyTags()">📋 태그 복사</button>
+  </div>
+
+  <!-- 본문 카드 -->
+  <div class="card">
+    <h3>📄 본문</h3>
+    <div id="body-edit-wrap" class="hidden">
+      <div id="block-editor" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <p style="font-size:12px;color:#888;margin:6px 0;">각 문단의 <b>문구만</b> 고치세요. 제목·굵게·링크·이미지 서식은 자동으로 유지됩니다.</p>
+    </div>
+    <div id="tistory-actions">
+      <button class="btn btn-green" onclick="copyTistoryHTML()">📋 HTML 본문 복사</button>
+    </div>
+    <div id="naver-actions" class="hidden">
+      <button class="btn btn-green" onclick="copyNaverBody()">📋 본문 복사</button>
+    </div>
+    <button class="btn btn-gray" id="btn-edit-body" onclick="toggleBodyEdit()">✏️ 문구 수정</button>
+    <button class="btn btn-gray hidden" id="btn-body-restore" onclick="restoreBody()">↩️ 원본으로</button>
+  </div>
+
+  <!-- 미리보기 카드 -->
+  <div class="card">
+    <h3>👁️ 미리보기</h3>
+    <div class="preview-box" id="preview"></div>
+  </div>
+
+  <!-- 이미지 카드 -->
+  <div class="card" id="img-card">
+    <h3>🖼️ 이미지</h3>
+    <div id="img-guide-list"></div>
+    <div style="margin-top:10px;">
+      <button class="btn btn-orange" onclick="downloadFeatured()">⬇️ 대표이미지 다운로드</button>
+      <button class="btn btn-orange hidden" id="btn-zip" onclick="downloadAllZip()">⬇️ 전체 이미지 ZIP</button>
+    </div>
+  </div>
+
+  <!-- 제작자 영역 -->
+  <div id="creator-area" class="hidden">
+    <div class="card">
+      <h3>🔧 제작자 영역 — 마크다운 원稿</h3>
+      <input type="text" id="creator-title" placeholder="제목">
+      <input type="text" id="creator-tags" placeholder="태그 (쉼표 구분)">
+      <input type="text" id="creator-featured" placeholder="대표이미지 URL (비워두면 본문 첫 이미지 사용)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px;font-size:13px;">
+      <textarea id="md-input" placeholder="# 소제목&#10;&#10;본문...&#10;&#10;![설명](https://이미지URL)"></textarea>
+      <div style="margin-top:8px;">
+        <button class="btn btn-blue" onclick="applyCreator()">✅ 적용</button>
+        <button class="btn btn-green" onclick="genShareLink()">🔗 발행 링크 생성</button>
+      </div>
+      <div style="margin-top:8px;">
+        <input type="text" id="share-link" readonly placeholder="발행 링크가 여기에 생성됩니다" onclick="this.select()">
+        <button class="btn btn-blue" style="margin-top:6px;" onclick="copyShareLink()">📋 링크 복사</button>
+      </div>
+      <details style="margin-top:10px;font-size:12px;">
+        <summary style="cursor:pointer;">📖 마크다운 문법</summary>
+        <div style="padding:8px;line-height:2;">
+          <code># 소제목</code> <code>## 참고</code> <code>### 작은제목</code><br>
+          <code>- 목록</code> <code>&gt; 인용</code> <code>**굵게**</code><br>
+          <code>![설명](URL)</code> <code>[텍스트](URL)</code> <code>---</code>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<script>
+// === 데이터 ===
+let postData = { title: '', tags: '', bodyTistory: '', bodyNaver: '', images: [] };
+let originalData = null;
+let mode = 'publisher', platform = 'tistory';
+let editingTitle = false, editingBody = false;
+
+// URL 해시에서 로드
+function loadFromHash() {
+  try {
+    const h = location.hash.slice(1);
+    if (!h) return false;
+    const data = JSON.parse(decodeURIComponent(escape(atob(h))));
+    postData = data;
+    originalData = JSON.parse(JSON.stringify(data));
+    return true;
+  } catch(e) { return false; }
+}
+
+// === 파싱 (제작 모드용) ===
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function isValidUrl(u){return /^https?:\/\//i.test(u);}
+
+function parse(md) {
+  const lines = md.split('\n'), blocks = [];
+  let para = [], list = [];
+  const flushP = () => { if(para.length){blocks.push({type:'p',text:para.join(' ')});para=[];} };
+  const flushL = () => { if(list.length){blocks.push({type:'ul',items:list});list=[];} };
+
+  for (let raw of lines) {
+    const line = raw.trim();
+    if (!line) { flushP(); flushL(); continue; }
+    if (line==='---'){flushP();flushL();blocks.push({type:'hr'});continue;}
+    if (line.startsWith('### ')){flushP();flushL();blocks.push({type:'h3',text:line.slice(4)});continue;}
+    if (line.startsWith('## ')){flushP();flushL();blocks.push({type:'h2',text:line.slice(3)});continue;}
+    if (line.startsWith('# ')){flushP();flushL();blocks.push({type:'h1',text:line.slice(2)});continue;}
+    if (line.startsWith('> ')){flushP();flushL();blocks.push({type:'quote',text:line.slice(2)});continue;}
+    if (/^[-*] /.test(line)){flushP();list.push(line.slice(2));continue;}
+    const imgM = line.match(/^!\[(.*?)\]\((.*?)\)$/);
+    if (imgM) {
+      flushP();flushL();
+      const src=imgM[2].trim();
+      if(!isValidUrl(src)){blocks.push({type:'warn',text:`이미지 URL 오류: ${src}`});continue;}
+      blocks.push({type:'img',alt:imgM[1],src});continue;
+    }
+    // 깨진 이미지/링크 문법: 원문 유지 + 경고
+    if (/!\[.*?\]/.test(line) && !imgM) {
+      flushP();flushL();
+      blocks.push({type:'warn',text:`이미지 문법 오류 (원문 유지): ${line.slice(0,50)}`});
+      blocks.push({type:'p',text:line});
+      continue;
+    }
+    flushL(); para.push(line);
+  }
+  flushP();flushL();
+  return blocks;
+}
+
+function inlineFmt(t){
+  t=esc(t);
+  // URL 경계 명확히: ) 뒤에 바로 한글이 오지 않도록
+  t=t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2">$1</a>');
+  t=t.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>');
+  return t;
+}
+function inlineNaver(t){
+  t=t.replace(/\*\*([^*]+)\*\*/g,'$1');
+  // 링크: URL 뒤에 문구가 붙지 않도록 괄호 처리
+  t=t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'$1 ($2)');
+  return t;
+}
+
+const P="font-family:'맑은 고딕',sans-serif;font-size:11pt;line-height:1.7;";
+const H1="font-family:'맑은 고딕',sans-serif;font-size:14pt;font-weight:bold;line-height:1.55;";
+const H2="font-family:'맑은 고딕',sans-serif;font-size:13pt;font-weight:bold;line-height:1.55;";
+const H3="font-family:'맑은 고딕',sans-serif;font-size:12pt;font-weight:bold;line-height:1.55;";
+const CAP="font-family:'맑은 고딕',sans-serif;font-size:10pt;line-height:1.7;text-align:center;";
+const QUOTE="font-family:'맑은 고딕',sans-serif;font-size:11pt;line-height:1.7;border-left:3px solid #3498db;padding-left:12px;color:#555;";
+const LI="font-family:'맑은 고딕',sans-serif;font-size:11pt;line-height:1.7;";
+const sp=px=>`<div style="height:${px}px;line-height:${px}px;">&nbsp;</div>`;
+
+function genTistory(blocks){
+  let html='<div>\n', prevSpace=true;
+  const need=px=>{if(!prevSpace)html+=sp(px)+'\n';prevSpace=true;};
+  blocks.forEach(b=>{
+    if(b.type==='p'){need(10);html+=`<p style="${P}">${inlineFmt(b.text)}</p>\n`;prevSpace=false;}
+    else if(b.type==='h1'){need(24);html+=`<div style="${H1}">${inlineFmt(b.text)}</div>\n`;prevSpace=false;}
+    else if(b.type==='h2'){need(26);html+=`<div style="${H2}">${inlineFmt(b.text)}</div>\n`;prevSpace=false;}
+    else if(b.type==='h3'){need(20);html+=`<div style="${H3}">${inlineFmt(b.text)}</div>\n`;prevSpace=false;}
+    else if(b.type==='ul'){need(10);html+=`<ul style="margin:0;padding-left:20px;">\n`;b.items.forEach(it=>html+=`<li style="${LI}">${inlineFmt(it)}</li>\n`);html+=`</ul>\n`;prevSpace=false;}
+    else if(b.type==='quote'){need(16);html+=`<div style="${QUOTE}">${inlineFmt(b.text)}</div>\n`;prevSpace=false;}
+    else if(b.type==='img'){need(22);html+=`<div style="text-align:center;">\n<img src="${esc(b.src)}" alt="${esc(b.alt)}" style="display:block;max-width:100%;height:auto;margin:0 auto;">\n</div>\n<p style="${CAP}">▲ ${esc(b.alt)}</p>\n`;prevSpace=true;html+=sp(22)+'\n';}
+    else if(b.type==='hr'){need(24);}
+  });
+  return html+'</div>';
+}
+
+// 네이버 본문: 이미지 완전 제거, 위치는 별도 안내 (실제 문구 포함)
+function genNaverBody(blocks){
+  let txt='', imgPositions=[];
+  let lastText='';
+  blocks.forEach(b=>{
+    if(b.type==='p'){lastText=b.text.slice(0,30);txt+=inlineNaver(b.text)+'\n\n';}
+    else if(b.type==='h1'){lastText=b.text.slice(0,30);txt+='\n■ '+inlineNaver(b.text)+'\n\n';}
+    else if(b.type==='h2'){lastText=b.text.slice(0,30);txt+='\n■ '+inlineNaver(b.text)+'\n\n';}
+    else if(b.type==='h3'){lastText=b.text.slice(0,30);txt+='\n▸ '+inlineNaver(b.text)+'\n\n';}
+    else if(b.type==='ul'){b.items.forEach(it=>txt+='• '+inlineNaver(it)+'\n');txt+='\n';lastText=b.items[b.items.length-1]?.slice(0,30)||'';}
+    else if(b.type==='quote'){lastText=b.text.slice(0,30);txt+='❝ '+inlineNaver(b.text)+' ❞\n\n';}
+    else if(b.type==='img'){
+      imgPositions.push({afterText: lastText||'(문서 시작)', alt: b.alt, src: b.src, index: imgPositions.length});
+    }
+    else if(b.type==='hr'){txt+='\n───\n\n';}
+  });
+  return {body: txt.trim(), imgPositions};
+}
+
+// === 렌더링 ===
+function render(){
+  const warns = [];
+  // 경고 수집
+  const blocks = parse(postData.bodyTistory || postData.bodyNaver || '');
+  blocks.filter(b=>b.type==='warn').forEach(b=>warns.push(b.text));
+
+  const wEl = document.getElementById('warnings');
+  wEl.innerHTML = warns.length
+    ? warns.map(w=>`<div class="warn-box">⚠️ ${esc(w)}</div>`).join('')
+    : '';
+
+  // 제목
+  document.getElementById('title-display').textContent = postData.title || '(제목 없음)';
+  // 태그
+  document.getElementById('tags-display').textContent = postData.tags || '(태그 없음)';
+
+  // 플랫폼별
+  const isT = platform==='tistory';
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.toggle('active',t.dataset.p===platform));
+  document.getElementById('tistory-actions').classList.toggle('hidden',!isT);
+  document.getElementById('naver-actions').classList.toggle('hidden',isT);
+  document.getElementById('btn-zip').classList.toggle('hidden',isT);
+
+  if(isT){
+    const b = parse(postData.bodyTistory);
+    document.getElementById('preview').innerHTML = genTistory(b);
+  } else {
+    const b = parse(postData.bodyNaver);
+    const {body, imgPositions} = genNaverBody(b);
+    // 네이버 미리보기: 텍스트 + 이미지 위치 표시
+    let pv = esc(body).replace(/\n/g,'<br>');
+    document.getElementById('preview').innerHTML = `<div style="${P}">${pv}</div>`;
+    // 이미지 안내
+    renderImgGuide(imgPositions);
+  }
+
+  // 티스토리 이미지 안내
+  if(isT){
+    const b = parse(postData.bodyTistory);
+    const imgs = b.filter(x=>x.type==='img');
+    renderImgGuideTistory(imgs);
+  }
+}
+
+function renderImgGuide(positions){
+  const el = document.getElementById('img-guide-list');
+  if(!positions.length){el.innerHTML='<p style="color:#999;font-size:13px;">이미지가 없습니다.</p>';return;}
+  el.innerHTML = positions.map((p,i)=>
+    `<div class="img-guide-item">
+      <img src="${esc(p.src)}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;flex-shrink:0;" onerror="this.style.display='none'">
+      <div class="info" style="flex:1;"><span class="pos">${i+1}.</span> ${esc(p.alt)}<br>
+      <span style="color:#888;font-size:11px;">→ "${esc(p.afterText)}..." 뒤에 삽입</span></div>
+      <button class="btn btn-orange" style="margin:0;flex-shrink:0;" onclick="downloadImgByIndex(${i},'naver')">⬇️</button>
+    </div>`).join('');
+}
+function renderImgGuideTistory(imgs){
+  const el = document.getElementById('img-guide-list');
+  if(!imgs.length){el.innerHTML='<p style="color:#999;font-size:13px;">이미지가 없습니다.</p>';return;}
+  el.innerHTML = imgs.map((im,i)=>
+    `<div class="img-guide-item">
+      <img src="${esc(im.src)}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;flex-shrink:0;" onerror="this.style.display='none'">
+      <div class="info" style="flex:1;"><span class="pos">${i+1}.</span> ${esc(im.alt)}</div>
+      <button class="btn btn-orange" style="margin:0;flex-shrink:0;" onclick="downloadImgByIndex(${i},'tistory')">⬇️</button>
+    </div>`).join('');
+}
+
+// === 복사 ===
+function doCopy(text){
+  return new Promise(res=>{
+    const ta=document.createElement('textarea');
+    ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    let ok=false;
+    try{ok=document.execCommand('copy');}catch(e){}
+    document.body.removeChild(ta);
+    if(ok){res(true);return;}
+    if(navigator.clipboard?.writeText){navigator.clipboard.writeText(text).then(()=>res(true)).catch(()=>res(false));}
+    else res(false);
+  });
+}
+async function copyTitle(){
+  const ok=await doCopy(postData.title||'');
+  alert(ok?'📋 제목 복사됨!':'⚠️ 복사 실패. 수동으로 복사해주세요.');
+}
+async function copyTags(){
+  const ok=await doCopy(postData.tags||'');
+  alert(ok?'📋 태그 복사됨!':'⚠️ 복사 실패. 수동으로 복사해주세요.');
+}
+async function copyTistoryHTML(){
+  const html=genTistory(parse(postData.bodyTistory));
+  const ok=await doCopy(html);
+  alert(ok?'📋 HTML 복사됨!':'⚠️ 복사 실패. 수동으로 복사해주세요.');
+}
+async function copyNaverBody(){
+  const {body}=genNaverBody(parse(postData.bodyNaver));
+  const ok=await doCopy(body);
+  alert(ok?'📋 본문 복사됨!':'⚠️ 복사 실패. 수동으로 복사해주세요.');
+}
+
+// === 문구 수정 (마크다운 직접 편집 - 서식 손실 없음) ===
+function toggleTitleEdit(){
+  if(editingTitle){
+    // 완료: 저장
+    postData.title=document.getElementById('title-edit').value;
+    editingTitle=false;
+  } else {
+    editingTitle=true;
+    document.getElementById('title-edit').value=postData.title;
+  }
+  document.getElementById('title-display').classList.toggle('hidden',editingTitle);
+  document.getElementById('title-edit-wrap').classList.toggle('hidden',!editingTitle);
+  document.getElementById('btn-title-restore').classList.toggle('hidden',!editingTitle);
+  document.getElementById('btn-edit-title').textContent=editingTitle?'✅ 완료':'✏️ 문구 수정';
+  if(!editingTitle){saveEdits();render();}
+}
+function restoreTitle(){
+  postData.title=originalData.title;
+  editingTitle=false;
+  document.getElementById('title-display').classList.toggle('hidden',false);
+  document.getElementById('title-edit-wrap').classList.toggle('hidden',true);
+  document.getElementById('btn-title-restore').classList.toggle('hidden',true);
+  document.getElementById('btn-edit-title').textContent='✏️ 문구 수정';
+  saveEdits();render();
+}
+function toggleBodyEdit(){
+  const key=platform==='tistory'?'bodyTistory':'bodyNaver';
+  if(editingBody){
+    // 완료: 블록 에디터에서 마크다운 재구성
+    postData[key]=blocksToMd(collectBlocks());
+    editingBody=false;
+    editPlatform=null;
+    document.getElementById('body-edit-wrap').classList.add('hidden');
+  } else {
+    editingBody=true;
+    editPlatform=platform;
+    // 먼저 표시한 뒤 렌더링 (높이 계산을 위해)
+    document.getElementById('body-edit-wrap').classList.remove('hidden');
+    renderBlockEditor(postData[key]);
+  }
+  document.getElementById('btn-body-restore').classList.toggle('hidden',!editingBody);
+  document.getElementById('btn-edit-body').textContent=editingBody?'✅ 완료':'✏️ 문구 수정';
+  if(!editingBody){saveEdits();render();}
+}
+// 블록 에디터 렌더링: 문구만 편집, 서식은 유지
+let editBlocks=[];
+function renderBlockEditor(md){
+  editBlocks=parse(md);
+  const wrap=document.getElementById('block-editor');
+  wrap.innerHTML='';
+  editBlocks.forEach((b,i)=>{
+    if(b.type==='img'){
+      const d=document.createElement('div');
+      d.style.cssText='padding:8px;background:#f0f0f0;border-radius:6px;font-size:12px;color:#888;';
+      d.innerHTML=`🖼️ 이미지: ${esc(b.alt)} <span style="color:#aaa;">(수정 불가)</span>`;
+      wrap.appendChild(d);
+    } else if(b.type==='hr'){
+      const d=document.createElement('div');
+      d.style.cssText='padding:4px;color:#aaa;font-size:12px;';
+      d.textContent='─── 구분선 ───';
+      wrap.appendChild(d);
+    } else if(b.type==='warn'){
+      return; // 경고 블록은 편집에서 제외
+    } else {
+      const label={p:'문단',h1:'소제목',h2:'참고제목',h3:'작은제목',quote:'인용',ul:'목록'}[b.type]||'텍스트';
+      const d=document.createElement('div');
+      d.style.cssText='border:1px solid #ddd;border-radius:6px;padding:6px;';
+      const lab=document.createElement('div');
+      lab.style.cssText='font-size:11px;color:#999;margin-bottom:4px;';
+      lab.textContent=label;
+      d.appendChild(lab);
+      if(b.type==='ul'){
+        b.items.forEach((it,ji)=>{
+          const ta=document.createElement('textarea');
+          ta.rows=1;ta.dataset.block=i;ta.dataset.item=ji;
+          ta.style.cssText='width:100%;padding:6px;border:1px solid #eee;border-radius:4px;font-size:13px;font-family:inherit;margin-bottom:4px;';
+          ta.value=it;
+          ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';});
+          d.appendChild(ta);
+        });
+      } else {
+        const ta=document.createElement('textarea');
+        ta.rows=2;ta.dataset.block=i;
+        ta.style.cssText='width:100%;padding:6px;border:1px solid #eee;border-radius:4px;font-size:13px;font-family:inherit;';
+        ta.value=b.text;
+        ta.addEventListener('input',()=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';});
+        d.appendChild(ta);
+      }
+      wrap.appendChild(d);
+    }
+  });
+  // 높이 자동 조절
+  wrap.querySelectorAll('textarea').forEach(ta=>{ta.style.height='auto';ta.style.height=ta.scrollHeight+'px';});
+}
+function collectBlocks(){
+  const wrap=document.getElementById('block-editor');
+  const tas=wrap.querySelectorAll('textarea');
+  // editBlocks 복사 후 텍스트만 교체
+  const out=JSON.parse(JSON.stringify(editBlocks));
+  tas.forEach(ta=>{
+    const bi=+ta.dataset.block, ji=ta.dataset.item;
+    if(ji!==undefined&&ji!==''){out[bi].items[+ji]=ta.value;}
+    else if(out[bi]){out[bi].text=ta.value;}
+  });
+  return out;
+}
+function blocksToMd(blocks){
+  let md='';
+  blocks.forEach(b=>{
+    if(b.type==='p')md+=b.text+'\n\n';
+    else if(b.type==='h1')md+='# '+b.text+'\n\n';
+    else if(b.type==='h2')md+='## '+b.text+'\n\n';
+    else if(b.type==='h3')md+='### '+b.text+'\n\n';
+    else if(b.type==='quote')md+='> '+b.text+'\n\n';
+    else if(b.type==='ul')b.items.forEach(it=>md+='- '+it+'\n'),md+='\n';
+    else if(b.type==='img')md+=`![${b.alt}](${b.src})\n\n`;
+    else if(b.type==='hr')md+='---\n\n';
+  });
+  return md.trim();
+}
+function restoreBody(){
+  const key=platform==='tistory'?'bodyTistory':'bodyNaver';
+  postData[key]=originalData[key];
+  editingBody=false;
+  editPlatform=null;
+  document.getElementById('body-edit-wrap').classList.toggle('hidden',true);
+  document.getElementById('btn-body-restore').classList.toggle('hidden',true);
+  document.getElementById('btn-edit-body').textContent='✏️ 문구 수정';
+  saveEdits();render();
+}
+// 글별 고유 키: 전체 데이터 해시 (충돌 방지)
+function postKey(){
+  const h = location.hash.slice(1) || 'default';
+  let hash = 5381;
+  for(let i=0;i<h.length;i++){ hash = ((hash<<5)+hash+h.charCodeAt(i))|0; }
+  return 'blog_edit_'+(hash>>>0).toString(36)+'_'+h.length;
+}
+// 수정 내용 저장 (글별)
+function saveEdits(){
+  try{
+    localStorage.setItem(postKey(), JSON.stringify({
+      title:postData.title, bodyTistory:postData.bodyTistory, bodyNaver:postData.bodyNaver
+    }));
+  }catch(e){}
+}
+function loadEdits(){
+  try{
+    const s=JSON.parse(localStorage.getItem(postKey()));
+    if(s){postData.title=s.title??postData.title;postData.bodyTistory=s.bodyTistory??postData.bodyTistory;postData.bodyNaver=s.bodyNaver??postData.bodyNaver;}
+  }catch(e){}
+}
+
+// === 이미지 다운로드 ===
+function getImages(which){
+  const key=which==='tistory'?'bodyTistory':'bodyNaver';
+  return parse(postData[key]).filter(b=>b.type==='img');
+}
+async function fetchImg(url){
+  const r=await fetch(url);
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  const b=await r.blob();
+  if(!b.type.startsWith('image/'))throw new Error('이미지 아님: '+b.type);
+  return b;
+}
+function ext(b){return b.type.includes('png')?'png':b.type.includes('webp')?'webp':b.type.includes('gif')?'gif':'jpg';}
+async function downloadImgByIndex(i,which){
+  const imgs=getImages(which), im=imgs[i];
+  if(!im)return;
+  try{
+    const blob=await fetchImg(im.src);
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`${String(i+1).padStart(2,'0')}_${im.alt.slice(0,20).replace(/[\\/:*?"<>|]/g,'')}.${ext(blob)}`;
+    a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  }catch(e){alert('다운로드 실패: '+e.message);}
+}
+async function downloadFeatured(){
+  // 대표이미지가 별도 지정되어 있으면 우선 사용
+  let src = postData.featuredImage;
+  let label = '대표이미지';
+  if(!src){
+    const imgs=getImages(platform);
+    if(!imgs.length){alert('이미지가 없습니다.');return;}
+    src=imgs[0].src; label=imgs[0].alt;
+  }
+  try{
+    const blob=await fetchImg(src);
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download=`featured.${ext(blob)}`;
+    a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  }catch(e){alert('다운로드 실패: '+e.message);}
+}
+async function downloadAllZip(){
+  const imgs=getImages('naver');
+  if(!imgs.length){alert('이미지가 없습니다.');return;}
+  if(typeof JSZip==='undefined'){alert('ZIP 로드 중. 잠시 후 다시 시도.');return;}
+  const zip=new JSZip();let ok=0,fail=[];
+  for(let i=0;i<imgs.length;i++){
+    try{
+      const blob=await fetchImg(imgs[i].src);
+      zip.file(`${String(i+1).padStart(2,'0')}_${imgs[i].alt.slice(0,20).replace(/[\\/:*?"<>|]/g,'')}.${ext(blob)}`,blob);
+      ok++;
+    }catch(e){fail.push(imgs[i].alt);}
+  }
+  let guide='이미지 삽입 안내\n================\n\n';
+  imgs.forEach((im,i)=>guide+=`${i+1}. ${im.alt}\n   ${im.src}\n\n`);
+  zip.file('_삽입안내.txt',guide);
+  const c=await zip.generateAsync({type:'blob'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(c);a.download='blog-images.zip';a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),10000);
+  alert(`✅ ${ok}개 완료`+(fail.length?`\n⚠️ 실패: ${fail.join(', ')}`:''));
+}
+
+// === 모드/플랫폼 ===
+function setMode(m){
+  mode=m;
+  document.getElementById('btn-publisher').classList.toggle('active',m==='publisher');
+  document.getElementById('btn-creator').classList.toggle('active',m==='creator');
+  document.getElementById('creator-area').classList.toggle('hidden',m!=='creator');
+}
+let editPlatform=null;
+function setPlatform(p){
+  if(editingBody && editPlatform!==p){
+    if(!confirm('수정 중인 내용이 있습니다. 저장하지 않고 플랫폼을 바꾸시겠습니까?')){
+      // 탭 UI 되돌리기
+      document.querySelectorAll('.ptab').forEach(t=>t.classList.toggle('active',t.dataset.p===platform));
+      return;
+    }
+    // 취소하고 전환
+    editingBody=false;editPlatform=null;
+    document.getElementById('body-edit-wrap').classList.toggle('hidden',true);
+    document.getElementById('btn-body-restore').classList.toggle('hidden',true);
+    document.getElementById('btn-edit-body').textContent='✏️ 문구 수정';
+  }
+  if(editingTitle){
+    alert('제목 수정 중입니다. 먼저 완료 또는 원본으로 되돌리기를 해주세요.');
+    document.querySelectorAll('.ptab').forEach(t=>t.classList.toggle('active',t.dataset.p===platform));
+    return;
+  }
+  platform=p;render();
+}
+
+// === 제작 모드 ===
+function applyCreator(){
+  postData={
+    title:document.getElementById('creator-title').value,
+    tags:document.getElementById('creator-tags').value,
+    featuredImage:document.getElementById('creator-featured').value.trim(),
+    bodyTistory:document.getElementById('md-input').value,
+    bodyNaver:document.getElementById('md-input').value,
+    images:[]
+  };
+  originalData=JSON.parse(JSON.stringify(postData));
+  render();
+  alert('✅ 적용됨! 발행 모드에서 확인하세요.');
+}
+function genShareLink(){
+  applyCreator();
+  const json=JSON.stringify(postData);
+  const b64=btoa(unescape(encodeURIComponent(json)));
+  const url=location.origin+location.pathname+'#'+b64;
+  document.getElementById('share-link').value=url;
+}
+async function copyShareLink(){
+  const v=document.getElementById('share-link').value;
+  if(!v){alert('먼저 발행 링크를 생성하세요.');return;}
+  const ok=await doCopy(v);
+  alert(ok?'📋 링크 복사됨!':'⚠️ 복사 실패.');
+}
+
+// === 초기화 ===
+postData={"title":"주머니에 들어가는 F08 미니 셀카봉 — 아이폰 줌 버튼까지 써본 후기","tags":"셀카봉, 미니셀카봉, F08, 아이폰셀카봉, 블루투스리모컨, 아이폰줌설정, 마그네틱삼각대, 여행용촬영용품, 내돈내산","featuredImage":"https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/01.webp","bodyTistory":"이 글에는 제휴 링크가 포함되어 있으며, 해당 링크를 통해 구매하시면 저에게 소정의 수수료가 지급될 수 있습니다. 제품은 직접 구매해 사용했습니다.\n\n알리익스프레스에서 쇼핑하다 보면 예정에 없던 물건을 장바구니에 담을 때가 있습니다. 저도 그렇게 발견한 제품이 F08 미니 셀카봉입니다.\n\n이미 아이폰용 울란지 MT71을 가지고 있지만, 이 제품은 접었을 때 크기가 작고 그립·셀카봉·삼각대 역할을 함께 한다는 점이 궁금했습니다. 아직 여행에서 오래 써본 후기는 아니고, 받아서 직접 펼쳐보고 아이폰을 붙여 촬영해 본 첫 사용 후기입니다.\n\n![접어서 보관하는 F08 미니 셀카봉](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/01.webp)\n\n# 접으면 콜라캔보다 작습니다\n\n판매 페이지에 표시된 길이는 접었을 때 약 11.7cm, 펼쳤을 때 최대 약 47.5cm입니다. 실제로 콜라 355ml 캔 옆에 두고 보니 얼마나 작은지 감이 왔습니다. 바지 주머니에도 들어가서 휴대성 하나는 확실했습니다.\n\n![콜라 355ml 캔과 접힌 F08 크기 비교](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/04.webp)\n\n![바지 주머니에 넣은 F08](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/05.webp)\n\n한 손에 쥐면 작은 카라비너 고리가 손가락에 걸려 그립을 잡는 데도 도움이 됐습니다. 여행 중 필요할 때 꺼내 쓰기에는 부담 없는 크기입니다.\n\n# 그립, 셀카봉, 삼각대로 바꿔 씁니다\n\n제일 흥미로웠던 부분은 작은 본체가 여러 형태로 바뀐다는 점입니다. 짧게 잡으면 카메라 그립처럼 사용할 수 있고, 봉을 늘리면 셀카봉이 됩니다.\n\n![짧게 잡고 아이폰을 가로로 촬영하는 모습](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/12.webp)\n\n최대 길이 약 47.5cm라 아주 멀리 뻗는 셀카봉은 아닙니다. 넓은 배경을 담는 용도보다는 가까운 셀피나 간단한 촬영에 어울리는 길이였습니다.\n\n![길이를 늘려 셀카봉으로 사용하는 모습](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/21.webp)\n\n아래쪽 다리 네 개를 펼치면 작은 삼각대가 됩니다. 테이블 위에 두고 촬영하기에는 편했지만, 야외 바닥이나 바람이 부는 환경에서의 안정성은 아직 확인하지 못했습니다.\n\n![네 개의 다리를 펼친 구조](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/07.webp)\n\n![아이폰을 세로로 붙여 세운 삼각대](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/18.webp)\n\n# 마그네틱 마운트는 편하지만 관절은 익숙해져야 합니다\n\n아이폰을 마그네틱으로 붙이는 방식이라 장착은 간편했습니다. 클램프를 벌려 끼우는 방식보다 손이 덜 갔고, 마운트 부분을 돌려 가로·세로 구도를 바꾸는 것도 편했습니다.\n\n![접힌 마그네틱 링과 마운트](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/02.webp)\n\n다만 관절을 조작할 때는 약간 뻑뻑한 느낌이 있었습니다. 처음에는 힘을 주는 방향을 찾는 데 시간이 조금 걸렸습니다. 마그네틱 부착력은 케이스 조합에 따라 달라질 수 있으니, 사용 전에는 장착 상태를 확인하는 편이 좋겠습니다.\n\n![아이폰을 장착하고 가로 촬영하는 모습](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/13.webp)\n\n# 아이폰 줌 버튼은 설정을 한 번 확인해야 했습니다\n\n블루투스 리모컨은 본체에서 분리해 사용할 수 있습니다. 셔터 버튼 외에 +/− 버튼도 있어 확대·축소를 조작할 수 있는데, 제 아이폰에서는 처음 연결했을 때 촬영 버튼만 되고 줌 버튼은 반응하지 않았습니다.\n\n제가 작동을 확인한 순서는 다음과 같습니다.\n\n1. 리모컨을 아이폰의 블루투스에 연결합니다.\n2. 아이폰에서 ‘설정 → 손쉬운 사용 → 확대/축소’로 들어갑니다.\n3. ‘확대/축소’를 켠 뒤 기본 카메라 앱으로 돌아갑니다.\n4. 리모컨의 +/− 버튼을 눌러 줌이 작동하는지 확인합니다.\n\n저는 이 설정을 켠 뒤 카메라 줌 버튼이 작동하는 것을 확인했습니다. 다만 사용한 아이폰 모델과 iOS 버전을 기록해 두지는 않아, 모든 아이폰에서 똑같이 된다고 단정하기는 어렵습니다.\n\n여기서 헷갈릴 수 있는 점이 있습니다. 손쉬운 사용의 ‘확대/축소’는 원래 아이폰 화면 자체를 크게 보여주는 기능입니다. 이 설정이 F08의 카메라 줌을 지원한다고 Apple이 안내하는 것은 아니며, 위 순서는 제가 직접 확인한 사용 경험입니다.\n\n설정을 켠 뒤 화면 전체가 갑자기 커졌다면 세 손가락으로 화면을 두 번 탭해 확대된 화면을 되돌릴 수 있습니다. 촬영 구도가 확대된 것인지 확인하려면 카메라의 배율 표시와 실제 촬영한 사진을 함께 살펴보는 편이 좋습니다. 화면의 글자와 버튼까지 커지는 것은 화면 확대입니다.\n\n촬영을 마친 뒤 화면 확대 기능이 필요 없다면 같은 설정에서 ‘확대/축소’를 꺼두면 됩니다. 줌 버튼이 계속 반응하지 않는 경우에는 셔터 버튼을 사용하고, 카메라 배율은 화면에서 직접 조절하면 됩니다.\n\n![분리형 리모컨의 셔터와 확대·축소 버튼](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/08.webp)\n\nApple의 화면 확대 기능 설명은 아래에서 확인할 수 있습니다.\n[Apple 지원 — iPhone 화면에서 확대하기](https://support.apple.com/ko-kr/guide/iphone/iph3e2e367e/ios)\n\n# 결론은, 이 가격이면 충분히 납득됩니다\n\n비슷한 형태의 제품이라도 가격 차이가 꽤 납니다. 전에 리뷰한 울란지 MT71과 비교하면 F08은 관절을 조작하는 느낌이 조금 더 투박했습니다.\n\n그래도 접었을 때 작은 크기에 그립·셀카봉·삼각대·마그네틱 마운트·분리형 리모컨이 함께 들어 있다는 점은 마음에 들었습니다. 손에 쥐었을 때 기능이 한꺼번에 모여 있는 느낌이랄까요.\n\n길게 뻗는 셀카봉이나 야외에서 쓸 안정적인 삼각대가 우선이라면 용도를 더 따져봐야 합니다. 저는 가볍게 들고 다니다 필요할 때 꺼내 쓰는 보조 촬영 도구로는 꽤 만족했습니다. 실제 여행에서 얼마나 자주 쓰게 될지는 더 사용해 봐야 알 것 같습니다.\n\n울란지 MT71 후기: [아이폰에 착 붙는 미니 삼각대 — 울란지 MT71 후기](https://nampy.tistory.com/116)\n\n구매 링크: [AliExpress에서 F08 미니 셀카봉 보기](https://s.click.aliexpress.com/e/_c3g6aHQH)","bodyNaver":"이 글에는 제휴 링크가 포함되어 있으며, 해당 링크를 통해 구매하시면 저에게 소정의 수수료가 지급될 수 있습니다. 제품은 직접 구매해 사용했습니다.\n\n작은 셀카봉은 휴대성이 얼마나 다를까 싶어 알리익스프레스에서 F08을 구매했습니다. 이미 울란지 MT71을 쓰고 있지만, 주머니에 넣고 다닐 만한 크기와 여러 촬영 방식이 궁금했습니다.\n\n아직 여행에서 오래 사용한 후기는 아닙니다. 받아서 펼쳐보고 아이폰으로 촬영해 본 첫인상을 정리했습니다.\n\n![접어서 보관하는 F08 미니 셀카봉](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/01.webp)\n\n# 가장 마음에 든 건 작은 크기\n\n판매 페이지 기준으로 접은 길이는 약 11.7cm, 최대 길이는 약 47.5cm입니다. 콜라 355ml 캔 옆에 두면 크기가 쉽게 짐작됩니다.\n\n![콜라 355ml 캔과 크기 비교](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/04.webp)\n\n바지 주머니에도 들어갔습니다. 챙겨 나가는 부담이 작다는 게 이 제품의 가장 큰 장점으로 느껴졌습니다.\n\n![바지 주머니에 넣은 F08](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/05.webp)\n\n# 하나로 세 가지 촬영 방식\n\n짧게 잡으면 그립, 봉을 늘리면 셀카봉, 다리 네 개를 펼치면 작은 삼각대가 됩니다.\n\n![짧게 잡고 가로 촬영하는 모습](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/12.webp)\n\n![셀카봉으로 길이를 늘린 모습](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/21.webp)\n\n47.5cm 정도라 넓은 배경을 담으려고 길게 뻗는 용도보다는 가까운 셀피나 간단한 촬영에 어울렸습니다.\n\n![네 개의 다리를 펼친 모습](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/07.webp)\n\n테이블 위에 두고 촬영하기에는 편했습니다. 야외 바닥이나 바람 속에서 얼마나 안정적인지는 아직 테스트하지 못했습니다.\n\n![아이폰을 세로로 세운 모습](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/18.webp)\n\n# 자석은 편하고, 관절은 조금 뻑뻑합니다\n\n아이폰을 마그네틱으로 붙이는 방식이라 장착은 간편했습니다. 마운트를 돌려 가로·세로 촬영으로 전환하는 것도 편했습니다.\n\n![접힌 마그네틱 마운트](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/02.webp)\n\n대신 관절 조작은 약간 뻑뻑했습니다. 처음에는 어느 방향으로 힘을 줘야 할지 익숙해지는 시간이 필요했습니다. 케이스에 따라 부착력이 달라질 수 있으니 장착 상태도 확인해 주세요.\n\n![아이폰을 장착한 가로 촬영 모습](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/13.webp)\n\n# 아이폰 줌 버튼은 설정을 한 번 확인해야 했습니다\n\n블루투스 리모컨은 본체에서 분리해 사용할 수 있습니다. 셔터 버튼 외에 +/− 버튼도 있어 확대·축소를 조작할 수 있는데, 제 아이폰에서는 처음 연결했을 때 촬영 버튼만 되고 줌 버튼은 반응하지 않았습니다.\n\n제가 작동을 확인한 순서는 다음과 같습니다.\n\n1. 리모컨을 아이폰의 블루투스에 연결합니다.\n2. 아이폰에서 ‘설정 → 손쉬운 사용 → 확대/축소’로 들어갑니다.\n3. ‘확대/축소’를 켠 뒤 기본 카메라 앱으로 돌아갑니다.\n4. 리모컨의 +/− 버튼을 눌러 줌이 작동하는지 확인합니다.\n\n저는 이 설정을 켠 뒤 카메라 줌 버튼이 작동하는 것을 확인했습니다. 다만 사용한 아이폰 모델과 iOS 버전을 기록해 두지는 않아, 모든 아이폰에서 똑같이 된다고 단정하기는 어렵습니다.\n\n여기서 헷갈릴 수 있는 점이 있습니다. 손쉬운 사용의 ‘확대/축소’는 원래 아이폰 화면 자체를 크게 보여주는 기능입니다. 이 설정이 F08의 카메라 줌을 지원한다고 Apple이 안내하는 것은 아니며, 위 순서는 제가 직접 확인한 사용 경험입니다.\n\n설정을 켠 뒤 화면 전체가 갑자기 커졌다면 세 손가락으로 화면을 두 번 탭해 확대된 화면을 되돌릴 수 있습니다. 촬영 구도가 확대된 것인지 확인하려면 카메라의 배율 표시와 실제 촬영한 사진을 함께 살펴보는 편이 좋습니다. 화면의 글자와 버튼까지 커지는 것은 화면 확대입니다.\n\n촬영을 마친 뒤 화면 확대 기능이 필요 없다면 같은 설정에서 ‘확대/축소’를 꺼두면 됩니다. 줌 버튼이 계속 반응하지 않는 경우에는 셔터 버튼을 사용하고, 카메라 배율은 화면에서 직접 조절하면 됩니다.\n\n![셔터와 확대·축소 버튼이 있는 리모컨](https://rivaljin.github.io/nampy-blog-assets/2026/10/f08-mini-selfie-stick/08.webp)\n\n설정 기능 자체에 대한 안내: [Apple 지원 — iPhone 화면에서 확대하기](https://support.apple.com/ko-kr/guide/iphone/iph3e2e367e/ios)\n\n# 가볍게 챙기는 보조 촬영 도구로 만족\n\n울란지 MT71보다 관절을 만지는 느낌은 투박했지만, 작은 크기에 여러 기능이 모여 있다는 점은 마음에 들었습니다.\n\n긴 셀카봉이나 야외용 삼각대가 꼭 필요한 분은 용도를 먼저 따져보세요. 저는 주머니에 넣고 다니다 필요할 때 꺼내 쓰는 보조 촬영 도구로 꽤 만족했습니다. 여행에서의 활용도는 더 써보고 판단하려고 합니다.\n\n울란지 MT71 후기: [아이폰에 착 붙는 미니 삼각대 — 울란지 MT71 후기](https://nampy.tistory.com/116)\n\n구매 링크: [AliExpress에서 F08 미니 셀카봉 보기](https://s.click.aliexpress.com/e/_c3g6aHQH)","images":[]};
+originalData=JSON.parse(JSON.stringify(postData));
+render();
+</script>
+</body>
+</html>
