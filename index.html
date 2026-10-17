@@ -256,6 +256,7 @@ function genNaverBody(blocks){
     else if(b.type==='quote'){lastText=b.text.slice(0,30);txt+='❝ '+inlineNaver(b.text)+' ❞\n\n';}
     else if(b.type==='img'){
       imgPositions.push({afterText: lastText||'(문서 시작)', alt: b.alt, src: b.src, index: imgPositions.length});
+      txt+='[사진 '+String(imgPositions.length).padStart(2,'0')+' — '+b.alt+']\n\n';
     }
     else if(b.type==='hr'){txt+='\n───\n\n';}
   });
