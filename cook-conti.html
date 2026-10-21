@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cook with Nampy — 콘티 작성 도우미</title>
+<link rel="stylesheet" href="./assets/conti.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;background:#f5f5f5;color:#333;line-height:1.6}
+.container{max-width:900px;margin:0 auto;padding:20px}
+h1{font-size:22px;margin-bottom:6px}
+.subtitle{color:#666;font-size:14px;margin-bottom:20px}
+.card{background:#fff;border-radius:8px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.card h2{font-size:17px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e8a838}
+.card h3{font-size:15px;margin:14px 0 8px;color:#555}
+label{display:block;font-size:13px;font-weight:bold;margin:10px 0 4px;color:#555}
+input[type=text],textarea,select{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:4px;font-size:14px;font-family:inherit}
+textarea{min-height:60px;resize:vertical}
+textarea.tall{min-height:100px}
+.hint{font-size:12px;color:#999;margin-top:2px}
+.seg-box{background:#fafafa;border:1px solid #eee;border-radius:6px;padding:12px;margin-bottom:10px}
+.seg-box h4{font-size:14px;margin-bottom:8px;color:#e8a838}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn{background:#e8a838;color:#fff;border:none;padding:12px 24px;font-size:16px;border-radius:6px;cursor:pointer;width:100%;margin-top:10px}
+.btn:hover{background:#d6962a}
+.btn-green{background:#4CAF50}
+.btn-gray{background:#666}
+.btn-row{display:flex;gap:8px;margin-top:10px}
+.btn-row .btn{margin-top:0}
+.output{background:#1e1e1e;color:#d4d4d4;border-radius:8px;padding:20px;margin-top:16px;white-space:pre-wrap;font-family:'Consolas','Monaco',monospace;font-size:13px;max-height:600px;overflow-y:auto}
+.autosave{font-size:12px;color:#999;text-align:right;margin-bottom:8px}
+.warn{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:12px;margin-bottom:16px;font-size:14px;display:none}
+.section-nav{position:sticky;top:0;background:#f5f5f5;padding:10px 0;z-index:10;margin-bottom:10px}
+.section-nav a{font-size:12px;margin-right:8px;color:#e8a838;text-decoration:none}
+.status-tag{font-size:11px;background:#e8a838;color:#fff;padding:2px 8px;border-radius:10px;margin-left:8px}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>🍳 Cook with Nampy — 콘티 작성 도우미 <span class="status-tag">v3.0</span></h1>
+<p class="subtitle">GPT와 만든 콘티를 가져와 촬영 순서대로 확인하세요. 입력과 촬영 체크는 이 기기에 저장됩니다.</p>
+<div class="autosave" id="autosaveMsg"></div>
+
+<div class="warn" id="warnBox"></div>
+
+<div id="editor">
+<div class="section-nav">
+<a href="#s0">기본</a><a href="#s1">1.콘셉트</a><a href="#s2">2.촬영전확인</a><a href="#s3">3.재료도구</a><a href="#s4">4.조리순서</a><a href="#s5">5.영상콘티</a><a href="#s6">6.촬영순서</a><a href="#s7">7.필수장면</a><a href="#s8">8.제목썸네일</a><a href="#s9">9.남은확인</a>
+</div>
+
+<div class="card" id="s0">
+<h2>기본 정보</h2>
+<label>요리명 *</label>
+<input type="text" id="dishName" placeholder="예: 유부김밥">
+<label>작성일</label>
+<input type="text" id="writeDate">
+<label>예상 편집 길이</label>
+<input type="text" id="editLength" placeholder="예: 5~7분">
+<label>촬영 제약</label>
+<input type="text" id="constraints" placeholder="예: 얼굴 출연 없음, 고정 탑뷰">
+</div>
+
+<div class="card" id="s1">
+<h2>1. 콘셉트</h2>
+<label>한 문장</label>
+<input type="text" id="concept1" placeholder="누구의 어떤 불편함을 어떤 방법으로">
+<label>핵심 3가지</label>
+<textarea id="concept3" class="tall" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea>
+<div class="grid2">
+<div><label>시청자가 얻는 것</label><input type="text" id="viewerGain"></div>
+<div><label>이번에 확인할 점</label><input type="text" id="toVerify"></div>
+</div>
+</div>
+
+<div class="card" id="s2">
+<h2>2. 촬영 전 확인·기입</h2>
+<label>체크리스트 (한 줄에 하나씩)</label>
+<textarea id="checklist" class="tall" placeholder="- [ ] 제품명:&#10;- [ ] 유부 개수: [확인 필요]&#10;- [ ] 밥량: 권장량 / 실측"></textarea>
+<p class="hint">권장량 / 실측 / [확인 필요] 구분해서 기입</p>
+</div>
+
+<div class="card" id="s3">
+<h2>3. 재료·도구</h2>
+<label>기본형 재료</label>
+<textarea id="ingredients" class="tall" placeholder="- 유부초밥 세트 1팩 (실측)&#10;- 지은 밥 00g (설명서 권장량)"></textarea>
+<label>도구</label>
+<textarea id="tools" placeholder="- 김밥 성형틀&#10;- 저울"></textarea>
+<label>응용형 (선택)</label>
+<input type="text" id="variation" placeholder="없으면 비워두기">
+</div>
+
+<div class="card" id="s4">
+<h2>4. 조리 순서 *</h2>
+<textarea id="cookSteps" class="tall" placeholder="1. ...&#10;2. ..."></textarea>
+<label>실패 방지 포인트</label>
+<input type="text" id="failPoint" placeholder="예: 과도한 조미액은 빼되 촉촉함은 남기기">
+</div>
+
+<div class="card" id="s5">
+<h2>5. 영상 콘티</h2>
+<p class="hint">각 구간별로 시간·화면·멘트·자막을 나눠 입력하세요.</p>
+<div id="segments"></div>
+</div>
+
+<div class="card" id="s6">
+<h2>6. 실제 촬영 순서</h2>
+<textarea id="shootOrder" class="tall" placeholder="1. ...&#10;2. ..."></textarea>
+</div>
+
+<div class="card" id="s7">
+<h2>7. 꼭 확보할 장면</h2>
+<textarea id="mustShots" class="tall" placeholder="- [ ] ..."></textarea>
+</div>
+
+<div class="card" id="s8">
+<h2>8. 제목·썸네일</h2>
+<label>제목 후보</label>
+<textarea id="titles" placeholder="1. ...&#10;2. ..."></textarea>
+<label>썸네일 방향</label>
+<input type="text" id="thumbnail">
+</div>
+
+<div class="card" id="s9">
+<h2>9. 완료 전 남은 확인</h2>
+<textarea id="remaining" placeholder="- [ ] ..."></textarea>
+</div>
+
+<div class="btn-row">
+<button class="btn btn-green" onclick="loadExample()">📋 공개 기능 예시</button>
+<button class="btn btn-gray" onclick="clearAll()">🗑 초기화</button>
+</div>
+<button class="btn" onclick="generate()">📝 마크다운 생성</button>
+<div class="btn-row" id="afterGen" style="display:none">
+<button class="btn btn-green" onclick="copyOutput()">📋 복사</button>
+<button class="btn btn-gray" onclick="downloadMd()">💾 .md 다운로드</button>
+</div>
+<div class="output" id="output" style="display:none"></div>
+</div>
+<section id="shooting" hidden></section>
+</div>
+
+<script>
+const SEGMENTS=[
+ ['5-1. 오프닝','seg1'],
+ ['5-2. 재료·분량','seg2'],
+ ['5-3. 준비·실패방지','seg3'],
+ ['5-4. 핵심 조리','seg4'],
+ ['5-5. 꺼내기·마무리','seg5'],
+ ['5-6. 응용형 (선택)','seg6'],
+ ['5-7. 완성량·플레이팅','seg7'],
+ ['5-8. 시식·마무리','seg8'],
+];
+const FIELDS=['time','screen','script','subtitle'];
+const FIELD_LABELS={time:'시간',screen:'화면',script:'멘트',subtitle:'자막'};
+
+// 세그먼트 입력란 생성
+(function(){
+  const c=document.getElementById('segments');
+  SEGMENTS.forEach(([title,prefix])=>{
+    const div=document.createElement('div');
+    div.className='seg-box';
+    let h=`<h4>${title}</h4><div class="grid2">`;
+    FIELDS.forEach(f=>{
+      h+=`<div><label for="${prefix}_${f}">${FIELD_LABELS[f]}</label>${f==='time'?`<input type="text" id="${prefix}_${f}" placeholder="${FIELD_LABELS[f]}">`:`<textarea id="${prefix}_${f}" placeholder="${FIELD_LABELS[f]}"></textarea>`}</div>`;
+    });
+    h+='</div>';
+    div.innerHTML=h;
+    c.appendChild(div);
+  });
+})();
+
+// 자동 저장
+const ALL_IDS=['dishName','writeDate','editLength','constraints','concept1','concept3','viewerGain','toVerify','checklist','ingredients','tools','variation','cookSteps','failPoint','shootOrder','mustShots','titles','thumbnail','remaining'];
+SEGMENTS.forEach(([t,p])=>FIELDS.forEach(f=>ALL_IDS.push(`${p}_${f}`)));
+
+function saveAll(){
+  const data={};
+  ALL_IDS.forEach(id=>{const el=document.getElementById(id);if(el)data[id]=el.value;});
+  try{localStorage.setItem('cookContiV2',JSON.stringify(data));}catch(e){document.getElementById('autosaveMsg').textContent='저장 실패 · JSON 백업을 다운로드하세요';return false;}
+  document.getElementById('autosaveMsg').textContent='✓ 자동 저장됨 '+new Date().toLocaleTimeString();
+}
+function restoreAll(){
+  try{
+    const data=JSON.parse(localStorage.getItem('cookContiV2')||'{}');
+    ALL_IDS.forEach(id=>{const el=document.getElementById(id);if(el&&data[id]!==undefined)el.value=data[id];});
+    if(Object.keys(data).length>0)document.getElementById('autosaveMsg').textContent='✓ 이전 입력 복원됨';
+  }catch(e){}
+}
+ALL_IDS.forEach(id=>{
+  const el=document.getElementById(id);
+  if(el)el.addEventListener('input',()=>{window._lastMd='';document.getElementById('afterGen').style.display='none';document.getElementById('output').style.display='none';document.getElementById('warnBox').dataset.confirmed='';clearTimeout(window._st);window._st=setTimeout(saveAll,800);});
+});
+document.getElementById('writeDate').value=new Date().toLocaleDateString('sv-SE');
+restoreAll();
+
+function val(id){const el=document.getElementById(id);return el?el.value.trim():'';}
+function segVal(prefix){
+  const o={};
+  FIELDS.forEach(f=>o[f]=val(`${prefix}_${f}`));
+  return o;
+}
+
+function loadExample(){
+ if(!confirm('현재 콘티를 공개 기능 예시로 교체할까요? 먼저 JSON 백업을 권합니다.'))return;
+ ALL_IDS.forEach(id=>{document.getElementById(id).value='';});
+ document.getElementById('dishName').value='공개 기능 예시';
+ document.getElementById('writeDate').value=new Date().toLocaleDateString('sv-SE');
+ document.getElementById('concept1').value='도구 기능 확인을 위한 가상 예시입니다.';
+ document.getElementById('cookSteps').value='1. 준비하기\n2. 과정 촬영하기\n3. 마무리하기';
+ document.getElementById('checklist').value='- [ ] 배터리 확인';
+ document.getElementById('shootOrder').value='1. 준비 장면\n2. 핵심 과정\n3. 완성 장면';
+ document.getElementById('mustShots').value='- [ ] 완성 장면';
+ for(const [title,prefix] of SEGMENTS){document.getElementById(prefix+'_screen').value='가상 예시: '+title;document.getElementById(prefix+'_script').value='이곳에 논의한 멘트를 입력하세요.';}
+ localStorage.removeItem('cookContiShootV3');window.dispatchEvent(new Event('conti-replaced'));saveAll();
+}
+function clearAll(){
+  if(!confirm('모든 입력과 촬영 체크를 지울까요? 필요한 내용은 먼저 JSON 백업하세요.'))return;
+  clearTimeout(window._st);
+  localStorage.removeItem('cookContiShootV3');
+  window.dispatchEvent(new Event('conti-replaced'));
+  ALL_IDS.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  localStorage.removeItem('cookContiV2');
+  document.getElementById('writeDate').value=new Date().toLocaleDateString('sv-SE');
+}
+
+function generate(){
+  const warn=document.getElementById('warnBox');
+  const missing=[];
+  if(!val('dishName'))missing.push('요리명');
+  if(!val('cookSteps'))missing.push('조리 순서');
+  if(missing.length>0 && warn.dataset.confirmed!=='1'){
+    warn.style.display='block';
+    warn.innerHTML='⚠️ 다음 항목을 입력해 주세요: <b>'+missing.join(', ')+'</b><br>그래도 생성하려면 다시 눌러주세요.';
+    warn.dataset.confirmed='1';
+    return;
+  }
+  if(warn.dataset.confirmed!=='1'&&!val('concept1')){
+    warn.style.display='block';
+    warn.innerHTML='⚠️ 콘셉트가 비어 있습니다. 그래도 생성하려면 다시 눌러주세요.';
+    warn.dataset.confirmed='1';
+    return;
+  }
+  warn.style.display='none';
+  warn.dataset.confirmed='';
+
+  const d=val('dishName');
+  const L=[];
+  L.push(`# ${d} 영상 콘티 & 스크립트`);
+  L.push(`작성일: ${val('writeDate')}`);
+  L.push(`현재 상태: 콘티 초안`);
+  L.push(`예상 편집 길이: ${val('editLength')||'[작성 필요]'}`);
+  L.push(`촬영 제약: ${val('constraints')||'[작성 필요]'}`);
+  L.push(``);
+  L.push(`## 1. 콘셉트`);
+  L.push(`한 문장: ${val('concept1')||'[작성 필요]'}`);
+  L.push(``);
+  L.push(`핵심 3가지:`);
+  L.push(val('concept3')||'[작성 필요]');
+  L.push(``);
+  L.push(`- 시청자가 얻는 것: ${val('viewerGain')||'[작성 필요]'}`);
+  L.push(`- 이번에 확인할 점: ${val('toVerify')||'[작성 필요]'}`);
+  L.push(``);
+  L.push(`## 2. 촬영 전 확인·기입`);
+  L.push(val('checklist')||'[작성 필요]');
+  L.push(``);
+  L.push(`## 3. 재료·도구`);
+  L.push(`### 기본형 재료`);
+  L.push(val('ingredients')||'[작성 필요]');
+  L.push(``);
+  L.push(`### 도구`);
+  L.push(val('tools')||'[작성 필요]');
+  if(val('variation')){L.push(``);L.push(`### 응용형: ${val('variation')}`);}
+  L.push(``);
+  L.push(`## 4. 조리 순서`);
+  L.push(val('cookSteps'));
+  L.push(``);
+  L.push(`- 실패 방지 포인트: ${val('failPoint')||'[작성 필요]'}`);
+  L.push(``);
+  L.push(`## 5. 영상 콘티`);
+  SEGMENTS.forEach(([title,prefix],idx)=>{
+    const s=segVal(prefix);
+    const isOptional = prefix==='seg6';
+    const hasAny = s.time||s.screen||s.script||s.subtitle;
+    if(!hasAny && isOptional) return; // 응용형만 생략
+    L.push(`### ${title}`);
+    if(!hasAny){
+      L.push('[작성 필요]');
+    }else{
+      if(s.time)L.push(`- 시간: ${s.time}`);
+      if(s.screen)L.push(`- 화면: ${s.screen}`);
+      if(s.script)L.push(`- 멘트: ${s.script}`);
+      if(s.subtitle)L.push(`- 자막: ${s.subtitle}`);
+    }
+    L.push(``);
+  });
+  L.push(`## 6. 실제 촬영 순서`);
+  L.push(val('shootOrder')||'[작성 필요]');
+  L.push(``);
+  L.push(`## 7. 꼭 확보할 장면`);
+  L.push(val('mustShots')||'[작성 필요]');
+  L.push(``);
+  L.push(`## 8. 제목·썸네일`);
+  L.push(`### 제목 후보`);
+  L.push(val('titles')||'[작성 필요]');
+  L.push(``);
+  L.push(`썸네일: ${val('thumbnail')||'[작성 필요]'}`);
+  L.push(``);
+  L.push(`## 9. 완료 전 남은 확인`);
+  L.push(val('remaining')||'[작성 필요]');
+
+  const out=L.join('\n');
+  window._lastMd=out;
+  window._lastTitle=d;
+  const el=document.getElementById('output');
+  el.textContent=out;
+  el.style.display='block';
+  document.getElementById('afterGen').style.display='flex';
+  el.scrollIntoView({behavior:'smooth'});
+}
+function copyOutput(){
+  generate();
+  const t=window._lastMd||'';
+  if(!t)return;
+  navigator.clipboard.writeText(t).then(()=>{
+    alert('✓ 클립보드에 복사됐습니다.');
+  }).catch(()=>{
+    alert('✗ 복사에 실패했습니다. .md 다운로드를 이용해 주세요.');
+  });
+}
+function downloadMd(){
+  generate();
+  const t=window._lastMd||'';
+  if(!t)return;
+  const title=(window._lastTitle||'conti').replace(/[^\w가-힣]+/g,'-');
+  const blob=new Blob([t],{type:'text/markdown;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=title+'-conti.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+</script>
+<script src="./assets/conti.js"></script>
+</body>
+</html>

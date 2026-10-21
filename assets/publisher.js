@@ -23,7 +23,7 @@ function loadFromHash() {
     const h = location.hash.slice(1);
     if (!h) return false;
     const data = JSON.parse(decodeURIComponent(escape(atob(h))));
-    postData = data;
+    postData = validateDraft(data);
     originalData = JSON.parse(JSON.stringify(data));
     return true;
   } catch(e) { return false; }
@@ -156,7 +156,7 @@ function render(){
 
   if(isT){
     const b = parse(bodyFor('tistory'));
-    document.getElementById('preview').innerHTML = genTistory(b);
+    document.getElementById('preview').innerHTML = postData.bodyHtmlTistory || genTistory(b);
   } else {
     const b = parse(bodyFor('naver'));
     const {body, imgPositions} = genNaverBody(b);
@@ -170,7 +170,7 @@ function render(){
   // 티스토리 이미지 안내
   if(isT){
     const b = parse(bodyFor('tistory'));
-    const imgs = b.filter(x=>x.type==='img');
+    const imgs = getImages('tistory');
     renderImgGuideTistory(imgs);
   }
 }
@@ -220,11 +220,13 @@ async function copyTags(){
   alert(ok?'📋 태그 복사됨!':'⚠️ 복사 실패. 수동으로 복사해주세요.');
 }
 async function copyTistoryHTML(){
-  const html=genTistory(parse(bodyFor('tistory')));
+  commitCurrentInputs();
+  const html=postData.bodyHtmlTistory || genTistory(parse(bodyFor('tistory')));
   const ok=await doCopy(html);
   alert(ok?'📋 HTML 복사됨!':'⚠️ 복사 실패. 수동으로 복사해주세요.');
 }
 async function copyNaverBody(){
+  commitCurrentInputs();
   const {body}=genNaverBody(parse(bodyFor('naver')));
   const ok=await doCopy(body);
   alert(ok?'📋 본문 복사됨!':'⚠️ 복사 실패. 수동으로 복사해주세요.');
@@ -256,6 +258,7 @@ function restoreTitle(){
   saveEdits();render();
 }
 function toggleBodyEdit(){
+  if(platform==='tistory'&&postData.bodyHtmlTistory){alert('이 원고는 보존 HTML입니다. 제작 모드의 HTML 원고 입력란에서 수정하세요.');return;}
   const key=platform==='tistory'?'bodyTistory':'bodyNaver';
   if(editingBody){
     // 완료: 블록 에디터에서 마크다운 재구성
@@ -362,6 +365,7 @@ function restoreBody(){
 }
 // 글별 고유 키: 전체 데이터 해시 (충돌 방지)
 function postKey(){
+  if(postData.id)return 'blog_draft_'+postData.id;
   const h = location.hash.slice(1) || location.pathname;
   let hash = 5381;
   for(let i=0;i<h.length;i++){ hash = ((hash<<5)+hash+h.charCodeAt(i))|0; }
@@ -371,19 +375,19 @@ function postKey(){
 function saveEdits(){
   try{
     localStorage.setItem(postKey(), JSON.stringify({
-      title:postData.title, tags:postData.tags, featuredImage:postData.featuredImage, title_tistory:postData.title_tistory, title_naver:postData.title_naver, link_tistory:postData.link_tistory, link_naver:postData.link_naver, bodyTistory:postData.bodyTistory, bodyNaver:postData.bodyNaver
+      ...postData, title:postData.title, tags:postData.tags, featuredImage:postData.featuredImage, title_tistory:postData.title_tistory, title_naver:postData.title_naver, link_tistory:postData.link_tistory, link_naver:postData.link_naver, bodyTistory:postData.bodyTistory, bodyNaver:postData.bodyNaver
     }));
-  }catch(e){}
+    draftNotice('기기에 저장됨 · 다른 기기에서 쓰려면 JSON으로 내보내세요.');
+    return true;
+  }catch(e){draftNotice('저장 실패 · 원고 JSON을 내보내 보관하세요.');return false;}
 }
 function loadEdits(){
-  try{
-    const s=JSON.parse(localStorage.getItem(postKey()));
-    if(s){for(const k of ['title_tistory','title_naver','link_tistory','link_naver','tags','featuredImage'])if(typeof s[k]==='string')postData[k]=s[k];postData.title=s.title??postData.title;postData.bodyTistory=s.bodyTistory??postData.bodyTistory;postData.bodyNaver=s.bodyNaver??postData.bodyNaver;}
-  }catch(e){}
+  try{const saved=JSON.parse(localStorage.getItem(postKey()));if(saved)postData=validateDraft({...postData,...saved});}catch(e){draftNotice('저장된 원고를 자동 복원하지 못했습니다. 기존 저장 데이터는 유지했습니다.');}
 }
 
 // === 이미지 다운로드 ===
 function getImages(which){
+  if(which==='tistory'&&postData.bodyHtmlTistory){const doc=new DOMParser().parseFromString(postData.bodyHtmlTistory,'text/html');return [...doc.querySelectorAll('img')].map(i=>({type:'img',src:i.getAttribute('src'),alt:i.getAttribute('alt')||''}));}
   const key=which==='tistory'?'bodyTistory':'bodyNaver';
   return parse(postData[key]).filter(b=>b.type==='img');
 }
@@ -460,6 +464,7 @@ function setMode(m){
     document.getElementById('creator-featured').value=postData.featuredImage||'';
     document.getElementById('md-input').value=postData.bodyTistory||'';
     document.getElementById('md-input-naver').value=postData.bodyNaver||'';
+    const html=document.getElementById('html-input');if(html)html.value=postData.bodyHtmlTistory||'';
   }
 }
 let editPlatform=null;
@@ -486,7 +491,8 @@ function setPlatform(p){
 
 // === 제작 모드 ===
 function applyCreator(){
-  postData={
+  const candidate={
+    ...postData,
     title:postData.title||document.getElementById('creator-title').value,
     title_tistory:document.getElementById('creator-title').value,
     title_naver:document.getElementById('creator-title-naver').value,
@@ -496,32 +502,112 @@ function applyCreator(){
     featuredImage:document.getElementById('creator-featured').value.trim(),
     bodyTistory:document.getElementById('md-input').value,
     bodyNaver:document.getElementById('md-input-naver').value,
+    bodyHtmlTistory:document.getElementById('html-input')?.value||'',
     images:[]
   };
+  try{postData=validateDraft(candidate);}catch(e){alert('적용 실패: '+e.message);return false;}
   originalData=JSON.parse(JSON.stringify(postData));
   saveEdits();render();
   alert('✅ 적용됨! 발행 모드에서 확인하세요.');
 }
-function genShareLink(){
-  applyCreator();
-  const json=JSON.stringify(postData);
-  const b64=btoa(unescape(encodeURIComponent(json)));
-  const url=location.origin+location.pathname+'#'+b64;
-  document.getElementById('share-link').value=url;
+// File-based drafts: no manuscript is shipped with the public app.
+function draftNotice(message){const el=document.getElementById('draft-status');if(el)el.textContent=message;}
+function validResourceUrl(value){
+  if(!value)return true;
+  try{const url=new URL(value);return /^https?:$/.test(url.protocol)&&!url.username&&!url.password&&!/[\s<>"']/.test(value);}catch{return false;}
 }
-async function copyShareLink(){
-  const v=document.getElementById('share-link').value;
-  if(!v){alert('먼저 발행 링크를 생성하세요.');return;}
-  const ok=await doCopy(v);
-  alert(ok?'📋 링크 복사됨!':'⚠️ 복사 실패.');
+function validateHtml(html){
+  if(!html)return '';
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  const tags=new Set('P DIV SPAN H1 H2 H3 H4 H5 H6 UL OL LI B STRONG EM I U S BLOCKQUOTE BR HR IMG A TABLE TBODY THEAD TR TD TH CAPTION FIGURE FIGCAPTION'.split(' '));
+  const attrs=new Set('style class id title src href alt width height target rel colspan rowspan loading decoding'.split(' '));
+  if(doc.head.querySelector('script,style,link,meta,base'))throw Error('HTML 원고에 실행 코드나 외부 설정이 포함되어 있습니다.');
+  for(const el of doc.body.querySelectorAll('*')){
+    if(!tags.has(el.tagName))throw Error('허용하지 않는 HTML 태그: '+el.tagName);
+    for(const a of el.attributes){
+      if(!attrs.has(a.name.toLowerCase())||/^on/i.test(a.name))throw Error('허용하지 않는 HTML 속성입니다.');
+      if(['src','href'].includes(a.name)&&!validResourceUrl(a.value))throw Error('HTML 사진·링크는 정상적인 HTTP(S) 주소여야 합니다.');
+      if(a.name==='style'&&/url\s*\(|expression|@import|\\|behavior|binding/i.test(a.value))throw Error('HTML 스타일에 외부 요청 또는 실행 표현식이 있습니다.');
+    }
+  }
+  return html;
+}
+function validateDraft(input){
+  if(!input||typeof input!=='object'||Array.isArray(input))throw Error('원고 JSON 객체가 필요합니다.');
+  if(input.version!==undefined&&input.version!==1)throw Error('지원하지 않는 원고 버전입니다.');
+  if(!['bodyTistory','bodyNaver','bodyHtmlTistory'].some(k=>typeof input[k]==='string'))throw Error('본문 필드가 없는 원고입니다.');
+  const fields=['title','title_tistory','title_naver','tags','featuredImage','link','link_tistory','link_naver','bodyTistory','bodyNaver','bodyHtmlTistory'];
+  const result={version:1};
+  for(const k of fields){if(input[k]!==undefined&&typeof input[k]!=='string')throw Error(k+' 값은 텍스트여야 합니다.');if(input[k]?.length>2000000)throw Error('원고가 너무 큽니다.');if(input[k]!==undefined)result[k]=input[k];}
+  for(const k of ['title','tags','bodyTistory','bodyNaver'])result[k]??='';
+  for(const k of ['featuredImage','link','link_tistory','link_naver'])if(!validResourceUrl(result[k]||''))throw Error('사진·제휴 링크 주소가 올바르지 않습니다.');
+  for(const key of ['bodyTistory','bodyNaver'])for(const line of result[key].split('\n')){const match=line.trim().match(/^!\[.*?\]\((.*?)\)$/);if(match&&!validResourceUrl(match[1]))throw Error('본문 사진 주소가 올바르지 않습니다.');}
+  result.bodyHtmlTistory=validateHtml(result.bodyHtmlTistory||'');
+  result.category=['reviews','bits','cook','essays'].includes(input.category)?input.category:'reviews';
+  if(input.id!==undefined){if(typeof input.id!=='string'||!input.id||input.id.length>200||!/^[a-zA-Z0-9_-]+$/.test(input.id))throw Error('원고 ID가 올바르지 않습니다.');result.id=input.id;}
+  if(input.images!==undefined&&!Array.isArray(input.images))throw Error('이미지 목록은 배열이어야 합니다.');
+  result.images=input.images||[];
+  return result;
+}
+function commitCurrentInputs(){
+  if(mode==='creator'){
+    const candidate={...postData,title_tistory:document.getElementById('creator-title').value,title_naver:document.getElementById('creator-title-naver').value,link_tistory:document.getElementById('creator-link-tistory').value.trim(),link_naver:document.getElementById('creator-link-naver').value.trim(),tags:document.getElementById('creator-tags').value,featuredImage:document.getElementById('creator-featured').value.trim(),bodyTistory:document.getElementById('md-input').value,bodyNaver:document.getElementById('md-input-naver').value,bodyHtmlTistory:document.getElementById('html-input')?.value||''};
+    postData=validateDraft(candidate);
+  }
+  if(editingTitle)postData[titleKey()]=document.getElementById('title-edit').value;
+  if(editingBody){postData[editPlatform==='naver'?'bodyNaver':'bodyTistory']=blocksToMd(collectBlocks());}
+  return postData;
+}
+function exportDraft(){
+  try{
+    commitCurrentInputs();
+    if(!postData.id)postData.id=crypto.randomUUID();
+    const data=validateDraft(postData);saveEdits();try{localStorage.setItem('blog_current_draft',data.id);}catch{}
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(data.id||'draft')+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),10000);draftNotice('JSON을 내보냈습니다. 원고 전체가 포함되어 있으므로 비공개 보관하세요.');
+  }catch(e){draftNotice('내보내기 실패: '+e.message);}
+}
+function applyImportedDraft(candidate){
+  // Validate before changing any browser storage or current editor state.
+  const next=validateDraft(candidate);
+  if(!confirm('선택한 원고를 열까요? 현재 입력은 먼저 이 기기에 저장합니다. 기기 간 보관은 JSON 내보내기를 이용하세요.'))return false;
+  commitCurrentInputs();
+  if(!saveEdits())throw Error('현재 원고를 저장하지 못해 교체를 중단했습니다. 먼저 JSON으로 내보내세요.');
+  next.id??=crypto.randomUUID();
+  postData=next;originalData=JSON.parse(JSON.stringify(next));editingTitle=false;editingBody=false;editPlatform=null;
+  document.getElementById('title-edit-wrap').classList.add('hidden');document.getElementById('body-edit-wrap').classList.add('hidden');document.getElementById('btn-title-restore').classList.add('hidden');document.getElementById('btn-body-restore').classList.add('hidden');
+  document.getElementById('btn-edit-title').textContent='✏️ 문구 수정';document.getElementById('btn-edit-body').textContent='✏️ 문구 수정';
+  try{localStorage.setItem('blog_current_draft',next.id);}catch{}
+  saveEdits();render();setMode(mode);document.getElementById('draft-category').value=next.category;renderLocalDrafts();draftNotice('원고를 열었습니다. 사진 주소와 플랫폼별 원고를 확인하세요.');return true;
+}
+async function importDraftFile(input){
+  try{const file=input.files[0];if(!file)return;if(file.size>5000000)throw Error('파일은 5MB 이하로 선택하세요.');const candidate=validateDraft(JSON.parse(await file.text()));applyImportedDraft(candidate);}catch(e){draftNotice('열기 실패 · 기존 원고 유지: '+e.message);}finally{input.value='';}
+}
+function renderLocalDrafts(){
+  const el=document.getElementById('local-drafts');if(!el)return;el.replaceChildren();
+  try{
+    const select=document.createElement('select');select.setAttribute('aria-label','기기에 저장된 원고');const option=document.createElement('option');option.textContent='기기에 저장된 원고·과거 수정본 선택';option.value='';select.append(option);
+    for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(!key.startsWith('blog_draft_')&&!key.startsWith('blog_edit_'))continue;
+      try{const draft=JSON.parse(localStorage.getItem(key));if(!draft||typeof draft!=='object')continue;const opt=document.createElement('option');opt.value=key;opt.textContent=(draft.title_tistory||draft.title||draft.title_naver||'이전 수정본')+' · '+key;select.append(opt);}catch{}
+    }
+    select.onchange=()=>{if(select.value)try{applyImportedDraft(JSON.parse(localStorage.getItem(select.value)))}catch(e){draftNotice('저장본 열기 실패 · 원본 데이터 유지: '+e.message);}};el.append(select);
+  }catch{draftNotice('브라우저 저장소에 접근하지 못했습니다. JSON 파일로 보관하세요.');}
+}
+function setupDraftFiles(){
+  document.getElementById('draft-file')?.addEventListener('change',e=>importDraftFile(e.target));
+  const category=document.getElementById('draft-category');if(category)category.value=postData.category||'reviews';
+  renderLocalDrafts();
+  document.querySelectorAll('#creator-area input,#creator-area textarea').forEach(el=>el.addEventListener('input',()=>{try{commitCurrentInputs();saveEdits();}catch(e){draftNotice('입력을 저장하지 못했습니다: '+e.message);}}));
 }
 
-
-// Legacy hash links keep working; new post pages carry JSON data only.
-if(!loadFromHash()){
-  const data=document.getElementById('post-data');
-  postData=data?JSON.parse(data.textContent):{title:'(제목이 여기에 표시됩니다)',tags:'태그1, 태그2',bodyTistory:'# 소제목\n\n본문이 여기에 표시됩니다.',bodyNaver:'# 소제목\n\n본문이 여기에 표시됩니다.',images:[]};
+// Legacy hash links: read-only compatibility. Never generate new manuscript URLs.
+let legacyHash=false;
+if(!(legacyHash=loadFromHash())){
+  postData={version:1,category:'reviews',title:'',tags:'',bodyTistory:'',bodyNaver:'',images:[]};
+  try{if(document.body.dataset.legacyPost!=='true'){const id=localStorage.getItem('blog_current_draft');if(id)postData.id=id;}}catch(e){}
   originalData=JSON.parse(JSON.stringify(postData));
 }
 loadEdits();
+originalData=JSON.parse(JSON.stringify(postData));
 render();
+setupDraftFiles();
+if(legacyHash)draftNotice('기존 해시 원고를 열었습니다. 주소는 비공개가 아닙니다. JSON을 내보내 비공개로 보관하고, 새 원고는 파일로 공유하세요.');

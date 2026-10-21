@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>블로그 공통 작성기 v4 — Bits with Nampy</title>
+<script src="../assets/vendor/jszip-3.10.1.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: '맑은 고딕', 'Malgun Gothic', sans-serif; background: #f5f5f5; color: #333; }
+  header { background: #2c3e50; color: white; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; }
+  header .mode-toggle { font-size: 13px; }
+  header .mode-toggle button { padding: 6px 12px; background: #34495e; color: white; border: 1px solid #4a6278; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  header .mode-toggle button.active { background: #27ae60; border-color: #27ae60; }
+  .platform-tabs { display: flex; background: white; border-bottom: 2px solid #ddd; }
+  .platform-tabs .ptab { flex: 1; padding: 14px; text-align: center; cursor: pointer; font-size: 15px; font-weight: bold; border-bottom: 3px solid transparent; }
+  .platform-tabs .ptab.active { border-bottom-color: #27ae60; color: #27ae60; }
+  .platform-tabs .ptab.tistory.active { border-bottom-color: #e74c3c; color: #e74c3c; }
+  .main { max-width: 900px; margin: 0 auto; padding: 20px; }
+  .card { background: white; border-radius: 8px; padding: 18px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .card h3 { font-size: 14px; color: #666; margin-bottom: 10px; }
+  .title-display { font-size: 18px; font-weight: bold; margin-bottom: 8px; line-height: 1.5; }
+  .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; margin-right: 8px; margin-bottom: 8px; }
+  .btn-green { background: #27ae60; color: white; }
+  .btn-green:hover { background: #219a52; }
+  .btn-blue { background: #2980b9; color: white; }
+  .btn-blue:hover { background: #2471a3; }
+  .btn-orange { background: #e67e22; color: white; }
+  .btn-orange:hover { background: #d35400; }
+  .btn-gray { background: #95a5a6; color: white; }
+  .btn-gray:hover { background: #7f8c8d; }
+  .preview-box { border: 1px solid #eee; border-radius: 6px; padding: 16px; max-height: 500px; overflow: auto; background: #fff; }
+  .tags-display { font-size: 14px; color: #555; background: #f8f8f8; padding: 10px; border-radius: 4px; margin-bottom: 8px; }
+  .img-guide-item { padding: 10px; border: 1px solid #eee; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .img-guide-item .info { font-size: 13px; }
+  .img-guide-item .pos { color: #e67e22; font-weight: bold; font-size: 12px; }
+  .hidden { display: none !important; }
+  /* 제작자 영역 */
+  #creator-area { border-top: 3px dashed #ccc; margin-top: 20px; padding-top: 16px; }
+  #creator-area .card { background: #f9f9f9; }
+  textarea#md-input { width: 100%; height: 200px; font-family: monospace; font-size: 12px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+  input#creator-title, input#creator-tags { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 8px; font-size: 13px; }
+  #share-link { width: 100%; padding: 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; background: #f0f0f0; }
+  .warn-box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; padding: 10px; margin: 8px 0; font-size: 13px; }
+  /* 수정 모드 */
+  .edit-area { width: 100%; min-height: 80px; padding: 10px; border: 2px solid #3498db; border-radius: 6px; font-size: 14px; font-family: inherit; line-height: 1.6; }
+  @media (max-width: 768px) { .main { padding: 12px; } }
+input[type=file],select{max-width:100%;font-size:16px;margin:10px 0} input.edit-area {width:100%;min-height:40px;height:40px;margin-bottom:8px;}
+</style>
+</head>
+<body data-legacy-post="true">
+<header>
+  <h1>📝 블로그 공통 작성기</h1>
+  <div class="mode-toggle">
+    <button id="btn-publisher" class="active" onclick="setMode('publisher')">발행 모드</button>
+    <button id="btn-creator" onclick="setMode('creator')">제작 모드</button>
+  </div>
+</header>
+
+<div class="platform-tabs">
+  <div class="ptab tistory active" data-p="tistory" onclick="setPlatform('tistory')">🟠 티스토리</div>
+  <div class="ptab" data-p="naver" onclick="setPlatform('naver')">🟢 네이버</div>
+</div>
+
+<div class="main">
+  <section class="card" id="draft-files">
+    <h3>비공개 원고 파일</h3>
+    <p>리뷰 · Bits with Nampy · Cook with Nampy · 에세이 공통 작성기입니다.</p>
+    <p>비공개 <a href="https://github.com/rivaljin/nampy-assets/blob/main/README.md" target="_blank" rel="noopener noreferrer">원고 보관함</a>에서 JSON 파일을 다운로드한 뒤 여세요. 파일은 서버로 업로드하지 않고 이 브라우저에서 처리합니다.</p>
+    <input id="draft-file" type="file" accept=".json,application/json" aria-label="비공개 원고 JSON 열기">
+    <button class="btn btn-blue" onclick="exportDraft()">원고 JSON 내보내기</button>
+    <label for="draft-category">카테고리</label><select id="draft-category" onchange="postData.category=this.value;saveEdits()"><option value="reviews">리뷰</option><option value="bits">Bits with Nampy</option><option value="cook">Cook with Nampy</option><option value="essays">에세이</option></select>
+    <p id="draft-status" role="status" style="margin-top:8px;line-height:1.6">원고는 기기에 저장됩니다. 기기 변경 전 JSON으로 백업하세요.</p>
+    <div id="local-drafts" style="margin-top:10px"></div>
+  </section>
+  <p class="card">이 주소의 원고는 비공개 보관함으로 이전했습니다. JSON 파일을 열거나 아래에서 기기에 남은 수정본을 선택해 내보내세요. 브라우저 데이터는 자동 삭제하지 않습니다.</p>
+  <!-- 경고 표시 -->
+  <div id="warnings"></div>
+
+  <!-- 제목 카드 -->
+  <div class="card">
+    <h3>📌 제목</h3>
+    <div class="title-display" id="title-display"></div>
+    <div id="title-edit-wrap" class="hidden">
+      <input type="text" id="title-edit" class="edit-area" style="min-height:40px;">
+    </div>
+    <button class="btn btn-blue" onclick="copyTitle()">📋 제목 복사</button>
+    <button class="btn btn-gray" id="btn-edit-title" onclick="toggleTitleEdit()">✏️ 문구 수정</button>
+    <button class="btn btn-gray hidden" id="btn-title-restore" onclick="restoreTitle()">↩️ 원본으로</button>
+  </div>
+
+  <!-- 태그 카드 -->
+  <div class="card">
+    <h3>🏷️ 태그 (쉼표 구분)</h3>
+    <div class="tags-display" id="tags-display"></div>
+    <button class="btn btn-blue" onclick="copyTags()">📋 태그 복사</button>
+  </div>
+
+  <div class="card hidden" id="affiliate-card">
+    <h3>🔗 수익형 제휴 링크</h3>
+    <div id="affiliate-display" style="overflow-wrap:anywhere"></div>
+    <button class="btn btn-blue" onclick="copyAffiliateLink()">📋 링크 복사</button>
+  </div>
+  <!-- 본문 카드 -->
+  <div class="card">
+    <h3>📄 본문</h3>
+    <div id="body-edit-wrap" class="hidden">
+      <div id="block-editor" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <p style="font-size:12px;color:#888;margin:6px 0;">각 문단의 <b>문구만</b> 고치세요. 제목·굵게·링크·이미지 서식은 자동으로 유지됩니다.</p>
+    </div>
+    <div id="tistory-actions">
+      <button class="btn btn-green" onclick="copyTistoryHTML()">📋 HTML 본문 복사</button>
+    </div>
+    <div id="naver-actions" class="hidden">
+      <button class="btn btn-green" onclick="copyNaverBody()">📋 본문 복사</button>
+    </div>
+    <button class="btn btn-gray" id="btn-edit-body" onclick="toggleBodyEdit()">✏️ 문구 수정</button>
+    <button class="btn btn-gray hidden" id="btn-body-restore" onclick="restoreBody()">↩️ 원본으로</button>
+  </div>
+
+  <!-- 미리보기 카드 -->
+  <div class="card">
+    <h3>👁️ 미리보기</h3>
+    <div class="preview-box" id="preview"></div>
+  </div>
+
+  <!-- 이미지 카드 -->
+  <div class="card" id="img-card">
+    <h3>🖼️ 이미지</h3>
+    <div id="img-guide-list"></div>
+    <div style="margin-top:10px;">
+      <button class="btn btn-orange" onclick="downloadFeatured()">⬇️ 대표이미지 다운로드</button>
+      <button class="btn btn-orange hidden" id="btn-zip" onclick="downloadAllZip()">⬇️ 전체 이미지 ZIP</button>
+    </div>
+  </div>
+
+  <!-- 제작자 영역 -->
+  <div id="creator-area" class="hidden">
+    <div class="card">
+      <h3>🔧 제작자 영역 — 마크다운 원稿</h3>
+      <input type="text" id="creator-title" placeholder="티스토리 제목" aria-label="티스토리 제목">
+      <input type="text" id="creator-title-naver" class="edit-area" placeholder="네이버 제목" aria-label="네이버 제목">
+      <input type="url" id="creator-link-tistory" class="edit-area" placeholder="티스토리 수익형 제휴 링크" aria-label="티스토리 제휴 링크">
+      <input type="url" id="creator-link-naver" class="edit-area" placeholder="네이버 수익형 제휴 링크" aria-label="네이버 제휴 링크">
+      <input type="text" id="creator-tags" placeholder="태그 (쉼표 구분)">
+      <input type="text" id="creator-featured" placeholder="대표이미지 URL (비워두면 본문 첫 이미지 사용)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;margin-bottom:8px;font-size:13px;">
+      <p>티스토리 원고</p><textarea aria-label="티스토리 원고" id="md-input" placeholder="# 소제목&#10;&#10;본문...&#10;&#10;![설명](https://이미지URL)"></textarea>
+      <details><summary>기존 티스토리 HTML 원고 보존</summary><p>HTML이 있으면 티스토리 복사에는 이 원문을 사용합니다. Markdown으로 바꾸려면 HTML 입력을 비우세요.</p><textarea id="html-input" class="edit-area" aria-label="티스토리 HTML 원고"></textarea></details>
+      <p>네이버 원고</p><textarea id="md-input-naver" aria-label="네이버 원고" class="edit-area" style="min-height:200px;width:100%;" placeholder="네이버 전용 원고"></textarea>
+      <p style="font-size:12px;">본문의 제휴 링크 주소에 {{affiliate_link}}를 쓰면 각 플랫폼의 링크로 변환됩니다.</p>
+      <div style="margin-top:8px;">
+        <button class="btn btn-blue" onclick="applyCreator()">✅ 적용</button>
+      </div>
+      <p>새 원고 공유는 JSON 파일로 하세요. 파일에는 원고 전체가 포함되므로 비공개로 보관하세요.</p>
+      <details style="margin-top:10px;font-size:12px;">
+        <summary style="cursor:pointer;">📖 마크다운 문법</summary>
+        <div style="padding:8px;line-height:2;">
+          <code># 소제목</code> <code>## 참고</code> <code>### 작은제목</code><br>
+          <code>- 목록</code> <code>&gt; 인용</code> <code>**굵게**</code><br>
+          <code>![설명](URL)</code> <code>[텍스트](URL)</code> <code>---</code>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
+
+
+<script src="../assets/publisher.js"></script>
+</body>
+</html>

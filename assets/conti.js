@@ -1,5 +1,5 @@
 (() => {
- const KEY='cookContiShootV3';
+ const KEY='cookContiShootV3'; // Same-origin storage keys intentionally retained; verify and back up before moving.
  const toolbar=document.createElement('div');toolbar.className='conti-toolbar';
  toolbar.innerHTML='<button id="edit-mode" aria-pressed="true">콘티 편집</button><button id="shoot-mode" aria-pressed="false">촬영 보기</button><button id="import-mode">GPT 콘티 가져오기</button><button id="backup-conti">JSON 백업</button>';
  document.querySelector('.autosave').after(toolbar);
@@ -50,7 +50,7 @@
  document.getElementById('edit-mode').onclick=()=>mode(false);document.getElementById('shoot-mode').onclick=()=>mode(true);document.addEventListener('visibilitychange',holdScreen);
  function normalize(raw){
   const source=raw.replace(/^\s*```(?:json|markdown|md)?\s*\n/,'').replace(/\n```\s*$/,'').trim();
-  if(source.startsWith('{')){const obj=JSON.parse(source),data=obj.fields||obj;const result={};for(const id of ALL_IDS){if(data[id]!==undefined&&typeof data[id]!=='string')throw Error(id+' 값은 텍스트여야 합니다.');result[id]=data[id]||''}if(!result.dishName.trim())throw Error('요리명이 없습니다.');return {fields:result,shooting:obj.version===1?obj.shooting:null};}
+  if(source.startsWith('{')){const obj=JSON.parse(source);if(!obj||Array.isArray(obj)||typeof obj!=='object'||(obj.version!==undefined&&obj.version!==1))throw Error('지원하지 않는 콘티 JSON 형식입니다.');const data=obj.fields||obj;if(!data||typeof data!=='object'||Array.isArray(data))throw Error('콘티 필드 객체가 필요합니다.');const result={};for(const id of ALL_IDS){if(data[id]!==undefined&&typeof data[id]!=='string')throw Error(id+' 값은 텍스트여야 합니다.');result[id]=data[id]||''}if(!result.dishName.trim())throw Error('요리명이 없습니다.');return {fields:result,shooting:obj.version===1?obj.shooting:null};}
   const result=Object.fromEntries(ALL_IDS.map(id=>[id,'']));let section=null,seg=null,field=null;const lines={};
   const sections={1:'concept',2:'checklist',3:'ingredients',4:'cookSteps',5:'segments',6:'shootOrder',7:'mustShots',8:'titles',9:'remaining'};
   const add=(id,line)=>{(lines[id]??=[]).push(line)};
@@ -77,6 +77,7 @@
    if(section&&section!=='segments')add(section==='ingredients'?(field||'ingredients'):section,line);
   }
   for(const [key,value] of Object.entries(lines))if(ALL_IDS.includes(key))result[key]=value.join('\n').trim();
+  for(const key of ALL_IDS)if(result[key]==='[작성 필요]')result[key]='';
   if(!result.dishName||!source.match(/^##\s+5[.\s]/m)||!FIELDS.some(f=>SEGMENTS.some(([,p])=>result[p+'_'+f])))throw Error('콘티 형식을 인식하지 못했습니다. GPT용 형식 안내의 JSON 형식을 사용하세요.');
   return {fields:result,shooting:null};
  }
