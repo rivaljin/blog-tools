@@ -39,25 +39,25 @@ h1{font-size:24px;text-align:center;margin-bottom:8px}
 <div id="status"></div>
 
 <div class="btn-grid">
-<button class="announce-btn btn-wait" onclick="speak(this.dataset.text)" data-text="기사님, 준비가 되면 조리완료 버튼을 눌러드리겠습니다. 잠시만 기다려 주십시오.">
+<button class="announce-btn btn-wait" onclick="playAudio('audio/wait.mp3', this.dataset.label)" data-label="기다려 주세요">
 ⏳ 기다려 주세요
 <small>준비가 되면 조리완료 버튼을 눌러드리겠습니다</small>
 </button>
-<button class="announce-btn btn-pack" onclick="speak(this.dataset.text)" data-text="기사님, 지금 포장 중입니다. 조금만 더 기다려 주십시오.">
+<button class="announce-btn btn-pack" onclick="playAudio('audio/pack.mp3', this.dataset.label)" data-label="포장 중입니다">
 📦 포장 중입니다
 <small>지금 포장 중입니다</small>
 </button>
-<button class="announce-btn btn-ready" onclick="speak(this.dataset.text)" data-text="기사님, 주문하신 음식이 나왔습니다. 전표의 코드를 한 번 확인하시고요, 안전운전 하세요.">
+<button class="announce-btn btn-ready" onclick="playAudio('audio/ready.mp3', this.dataset.label)" data-label="음식 나왔습니다">
 ✅ 음식 나왔습니다
 <small>코드 확인하시고, 안전운전 하세요</small>
 </button>
-<button class="announce-btn btn-thanks" onclick="speak(this.dataset.text)" data-text="기사님, 감사합니다. 안전운전 하세요.">
+<button class="announce-btn btn-thanks" onclick="playAudio('audio/thanks.mp3', this.dataset.label)" data-label="감사합니다">
 🙏 감사합니다
 <small>안전운전 하세요</small>
 </button>
 </div>
 
-<button class="stop-btn" onclick="stopSpeak()">⏹ 음성 정지</button>
+<button class="stop-btn" onclick="stopAll()">⏹ 음성 정지</button>
 
 <div class="custom">
 <h2>직접 입력해서 말하기</h2>
@@ -77,42 +77,45 @@ h1{font-size:24px;text-align:center;margin-bottom:8px}
 </div>
 
 <script>
+let currentAudio = null;
+function playAudio(src, label){
+  stopAll();
+  currentAudio = new Audio(src);
+  const vol = parseFloat(document.getElementById('volume').value);
+  currentAudio.volume = vol;
+  const st = document.getElementById('status');
+  st.textContent = '🔊 재생 중: ' + label;
+  currentAudio.onended = ()=>{ st.textContent=''; };
+  currentAudio.onerror = ()=>{ st.textContent='⚠️ 음성 파일을 불러오지 못했습니다'; };
+  currentAudio.play();
+}
+function stopAll(){
+  if(currentAudio){ currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
+  if('speechSynthesis' in window) speechSynthesis.cancel();
+  document.getElementById('status').textContent='';
+}
+// 직접 입력용 브라우저 음성 (보조 기능)
 function getVoice(){
   const voices = speechSynthesis.getVoices();
-  // 한국어 여성 음성 우선, 없으면 한국어 음성
-  return voices.find(v=>v.lang.startsWith('ko') && /female|여성|Yuna|유나/i.test(v.name))
-      || voices.find(v=>v.lang.startsWith('ko'))
-      || voices[0];
+  return voices.find(v=>v.lang.startsWith('ko')) || voices[0];
 }
-function speak(text){
-  if(!text) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
+function speakCustom(){
+  const t = document.getElementById('customText').value.trim();
+  if(!t) return;
+  stopAll();
+  const u = new SpeechSynthesisUtterance(t);
   const v = getVoice();
   if(v) u.voice = v;
   u.lang = 'ko-KR';
   u.rate = parseFloat(document.getElementById('rate').value);
   u.volume = parseFloat(document.getElementById('volume').value);
-  const st = document.getElementById('status');
-  st.textContent = '🔊 재생 중: ' + text;
-  u.onend = ()=>{ st.textContent=''; };
-  u.onerror = ()=>{ st.textContent='⚠️ 음성 재생에 실패했습니다'; };
+  document.getElementById('status').textContent = '🔊 재생 중: ' + t;
+  u.onend = ()=>{ document.getElementById('status').textContent=''; };
   speechSynthesis.speak(u);
 }
-function speakCustom(){
-  const t = document.getElementById('customText').value.trim();
-  if(t) speak(t);
-}
-function stopSpeak(){
-  speechSynthesis.cancel();
-  document.getElementById('status').textContent='';
-}
-// 음성 목록 미리 로드
 if('speechSynthesis' in window){
   speechSynthesis.getVoices();
   speechSynthesis.onvoiceschanged = ()=>speechSynthesis.getVoices();
-}else{
-  document.getElementById('status').textContent='⚠️ 이 브라우저는 음성 합성을 지원하지 않습니다. 크롬을 사용해 주세요.';
 }
 </script>
 </body>
