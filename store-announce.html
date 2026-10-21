@@ -69,8 +69,8 @@ h1{font-size:24px;text-align:center;margin-bottom:8px}
 
 <div class="settings">
 <h2>음성 설정</h2>
-<label>속도: <span class="val" id="rateVal">1.0</span></label>
-<input type="range" id="rate" min="0.6" max="1.4" step="0.1" value="1.0" oninput="document.getElementById('rateVal').textContent=this.value">
+<label>속도: <span class="val" id="rateVal">0.9</span></label>
+<input type="range" id="rate" min="0.6" max="1.4" step="0.05" value="0.9" oninput="document.getElementById('rateVal').textContent=this.value; if(currentAudio) currentAudio.playbackRate=parseFloat(this.value);">
 <label>볼륨: <span class="val" id="volVal">1.0</span></label>
 <input type="range" id="volume" min="0.2" max="1" step="0.1" value="1" oninput="document.getElementById('volVal').textContent=this.value">
 </div>
@@ -83,6 +83,8 @@ function playAudio(src, label){
   currentAudio = new Audio(src);
   const vol = parseFloat(document.getElementById('volume').value);
   currentAudio.volume = vol;
+  currentAudio.playbackRate = parseFloat(document.getElementById('rate').value);
+  currentAudio.preservesPitch = true;
   const st = document.getElementById('status');
   st.textContent = '🔊 재생 중: ' + label;
   currentAudio.onended = ()=>{ st.textContent=''; };
