@@ -1,4 +1,4 @@
-const CACHE='cook-conti-offline-v2-migration';
+const CACHE='cook-conti-offline-v3-migration-ready';
 const FILES=['./cook-conti.html','./assets/conti.js','./assets/conti.css'];
 const URLS=new Set(FILES.map(p=>new URL(p,self.location).href));
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES))));

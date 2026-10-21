@@ -3,6 +3,12 @@
  const toolbar=document.createElement('div');toolbar.className='conti-toolbar';
  toolbar.innerHTML='<button id="edit-mode" aria-pressed="true">콘티 편집</button><button id="shoot-mode" aria-pressed="false">촬영 보기</button><button id="import-mode">GPT 콘티 가져오기</button><button id="backup-conti">JSON 백업</button>';
  document.querySelector('.autosave').after(toolbar);
+ const migration=document.createElement('section');migration.className='conti-import';migration.setAttribute('aria-label','콘티 도구 이전 안내');
+ const heading=document.createElement('h2');heading.textContent='유튜브 콘티 도구가 새 주소로 이전했어요';
+ const help=document.createElement('p');help.className='conti-note';help.textContent='먼저 이 화면의 JSON 백업으로 현재 콘티·촬영 체크·순서를 보관하세요. 새 도구에서 내용이 없거나 다르면 GPT 콘티 가져오기 → 파일 선택 → 내용 확인 → 교체로 복원하세요. 기기·브라우저에 따라 자동 이전되지 않을 수 있습니다. 두 도구를 동시에 편집하지 마세요. 기존 저장 데이터는 삭제하지 않습니다.';
+ const link=document.createElement('a');link.href='https://rivaljin.github.io/youtube-tools/cook-conti.html';link.textContent='새 유튜브 콘티 도구 열기';link.style.cssText='display:block;padding:12px 0;font-size:18px;font-weight:bold;color:#0058b0';
+ migration.append(heading,help,link);toolbar.after(migration);
+
  const message=document.createElement('div');message.className='conti-save';message.setAttribute('role','status');toolbar.after(message);
  const importer=document.createElement('section');importer.className='conti-import';importer.hidden=true;
  importer.innerHTML='<h2>GPT 콘티 가져오기</h2><p class="conti-note">이 도구에서 내려받은 Markdown 또는 JSON을 붙여넣거나 파일로 선택하세요. GPT에는 아래 형식 안내를 전달하면 됩니다. 가져오기는 현재 콘티를 교체합니다.</p><textarea id="import-text" aria-label="콘티 Markdown 또는 JSON" placeholder="GPT가 보내준 콘티를 붙여넣으세요"></textarea><input id="import-file" type="file" accept=".md,.txt,.json,text/plain,text/markdown,application/json" aria-label="콘티 파일 선택"><p id="import-summary" role="status"></p><button id="import-preview">내용 확인</button> <button id="import-apply" disabled>현재 콘티 교체</button> <button id="gpt-format">GPT용 형식 안내 복사</button>';

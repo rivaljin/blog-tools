@@ -11,7 +11,7 @@ https://rivaljin.github.io/blog-tools/
 [사용법·파일 형식·기존 수정본 복원](PUBLISHER.md)
 
 원고는 공개 코드에 내장하지 않습니다. 공개 사진 주소는 `nampy-blog-assets`를
-유지합니다. 유튜브 콘티 원본 코드는 `rivaljin/youtube-tools`로 분리했습니다. 새 주소는 Pages 설정 대기이므로 기존 콘티 주소를 유지합니다. [설정·이전 방법](CONTI.md)을 참고하세요.
+유지합니다. 유튜브 콘티 원본 코드와 웹 도구는 `rivaljin/youtube-tools`로 분리·배포했습니다. 기존 콘티 주소는 이전 안내와 백업용으로 유지합니다. [이전 방법](CONTI.md)을 참고하세요.
 
 매장 안내 방송 HTML·음성 파일은 기존 주소 유지를 위한 배포 사본이며,
 소스 원본은 비공개 `nampy-store-ops/apps/store-announce`입니다. 이번 원고 정리에서
