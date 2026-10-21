@@ -16,7 +16,7 @@ run(`postData={title:'legacy',title_tistory:'티스토리 제목',title_naver:'�
  const legacy={title:'옛 링크',bodyTistory:'본문',bodyNaver:'본문'};c.location.hash='#'+Buffer.from(JSON.stringify(legacy)).toString('base64');assert.equal(run('loadFromHash()'),true);assert.equal(run('getTitle()'),'옛 링크');
  run('setMode("creator")');el('creator-title').value='새 T';el('creator-title-naver').value='새 N';el('creator-link-tistory').value='https://example.com/tt';el('creator-link-naver').value='https://example.com/nn';el('md-input').value='T 원고';el('md-input-naver').value='N 원고';run('applyCreator()');assert.equal(run('getTitle("tistory")'),'새 T');assert.equal(run('getTitle("naver")'),'새 N');assert.equal(run('postData.bodyNaver'),'N 원고');assert.equal(run('getLink("naver")'),'https://example.com/nn');
  const root=fs.readFileSync('index.html','utf8'),review=fs.readFileSync('reviews/brdrc-pocket-tripod-20261017.html','utf8');
- assert.match(root,/src="\.\/assets\/publisher.js"/);assert.match(review,/src="\.\.\/assets\/publisher.js"/);
+ assert.match(root,/src="\.\/assets\/publisher.js\?v=4"/);assert.match(review,/src="\.\.\/assets\/publisher.js\?v=4"/);
  for(const path of ['index.html',...fs.readdirSync('reviews').filter(n=>n.endsWith('.html')).map(n=>'reviews/'+n),'t13-review.html','shin-ramyeon-pasta.html'])assert.match(fs.readFileSync(path,'utf8'),/<meta name="robots" content="noindex">/);
  console.log('PASS: platform titles/links, copied bodies, photo markers, persistence, old hashes, separate drafts, shared JS and noindex');
 })().catch(e=>{console.error(e);process.exitCode=1});
