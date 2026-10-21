@@ -1,0 +1,22 @@
+const assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm');
+const code=fs.readFileSync('assets/publisher.js','utf8').split('// Legacy hash links')[0];
+const elements=new Map(),storage=new Map();
+const el=id=>{if(!elements.has(id))elements.set(id,{value:'',textContent:'',innerHTML:'',classList:{toggle(){},add(){},remove(){}}});return elements.get(id)};
+const c={URL,location:{hash:'',pathname:'/reviews/one.html'},localStorage:{setItem:(k,v)=>storage.set(k,v),getItem:k=>storage.get(k)||null},document:{getElementById:el,querySelectorAll:()=>[]},alert(){},atob:s=>Buffer.from(s,'base64').toString('binary')};
+vm.createContext(c);const run=s=>vm.runInContext(s,c);run(code);
+run(`postData={title:'legacy',title_tistory:'티스토리 제목',title_naver:'네이버 제목',link_tistory:'https://example.com/t',link_naver:'https://example.com/n',bodyTistory:'[제품]({{affiliate_link}})\\n\\n![사진](https://example.com/a.webp)',bodyNaver:'[제품]({{affiliate_link}})\\n\\n![사진](https://example.com/a.webp)',tags:'태그'};originalData=JSON.parse(JSON.stringify(postData));doCopy=async value=>{captured=value;return true;}`);
+(async()=>{
+ await run('platform="tistory";copyTitle()');assert.equal(c.captured,'티스토리 제목');
+ await run('platform="naver";copyTitle()');assert.equal(c.captured,'네이버 제목');
+ await run('copyNaverBody()');assert.match(c.captured,/example.com\/n/);assert.match(c.captured,/\[사진 01 — 사진\]/);
+ await run('copyTistoryHTML()');assert.match(c.captured,/example.com\/t/);assert.doesNotMatch(c.captured,/\[사진 01/);
+ run('saveEdits();postData.title_naver="changed";loadEdits()');assert.equal(run('getTitle("naver")'),'네이버 제목');
+ const key=run('postKey()');c.location.pathname='/reviews/two.html';assert.notEqual(run('postKey()'),key);
+ run('postData={title:"old format",bodyTistory:"old body",bodyNaver:"old body"}');assert.equal(run('getTitle("tistory")'),'old format');assert.equal(run('getTitle("naver")'),'old format');
+ const legacy={title:'옛 링크',bodyTistory:'본문',bodyNaver:'본문'};c.location.hash='#'+Buffer.from(JSON.stringify(legacy)).toString('base64');assert.equal(run('loadFromHash()'),true);assert.equal(run('getTitle()'),'옛 링크');
+ run('setMode("creator")');el('creator-title').value='새 T';el('creator-title-naver').value='새 N';el('creator-link-tistory').value='https://example.com/tt';el('creator-link-naver').value='https://example.com/nn';el('md-input').value='T 원고';el('md-input-naver').value='N 원고';run('applyCreator()');assert.equal(run('getTitle("tistory")'),'새 T');assert.equal(run('getTitle("naver")'),'새 N');assert.equal(run('postData.bodyNaver'),'N 원고');assert.equal(run('getLink("naver")'),'https://example.com/nn');
+ const root=fs.readFileSync('index.html','utf8'),review=fs.readFileSync('reviews/brdrc-pocket-tripod-20261017.html','utf8');
+ assert.match(root,/src="\.\/assets\/publisher.js"/);assert.match(review,/src="\.\.\/assets\/publisher.js"/);
+ for(const path of ['index.html',...fs.readdirSync('reviews').filter(n=>n.endsWith('.html')).map(n=>'reviews/'+n),'t13-review.html','shin-ramyeon-pasta.html'])assert.match(fs.readFileSync(path,'utf8'),/<meta name="robots" content="noindex">/);
+ console.log('PASS: platform titles/links, copied bodies, photo markers, persistence, old hashes, separate drafts, shared JS and noindex');
+})().catch(e=>{console.error(e);process.exitCode=1});
