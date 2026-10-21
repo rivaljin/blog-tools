@@ -55,8 +55,8 @@ body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;background:#101216;c
 
 <div class="header">
 <span class="logo">📢</span>
-<h1>매장 안내 패널 <span class="ver">v3.0</span></h1>
-<div class="led-wrap"><span id="led"></span><span id="status">대기 중</span></div>
+<h1>매장 안내 패널 <span class="ver">v3.1</span></h1>
+<div class="led-wrap"><span id="led"></span><span id="status" role="status" aria-live="polite">대기 중</span></div>
 </div>
 
 <div class="btn-grid">
@@ -82,12 +82,12 @@ body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;background:#101216;c
 <button class="stop-btn" onclick="stopAll()">⏹ 음성 정지</button>
 <div class="ctrl-row">
 <label>속도</label>
-<input type="range" id="rate" min="0.6" max="1.4" step="0.05" value="0.9" oninput="document.getElementById('rateVal').textContent=this.value; if(currentAudio) currentAudio.playbackRate=parseFloat(this.value);">
+<input type="range" id="rate" min="0.6" max="1.4" step="0.05" value="0.9" oninput="document.getElementById('rateVal').textContent=this.value; applyControls();">
 <span class="val" id="rateVal">0.9</span>
 </div>
 <div class="ctrl-row">
 <label>볼륨</label>
-<input type="range" id="volume" min="0.2" max="1" step="0.1" value="1" oninput="document.getElementById('volVal').textContent=this.value">
+<input type="range" id="volume" min="0.2" max="1" step="0.1" value="1" oninput="document.getElementById('volVal').textContent=this.value; applyControls();">
 <span class="val" id="volVal">1</span>
 </div>
 <div class="custom-row">
@@ -100,6 +100,9 @@ body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;background:#101216;c
 <script>
 let currentAudio = null;
 let currentBtn = null;
+let currentSpeech = null;
+let generation = 0;
+function applyControls(){if(currentAudio){currentAudio.volume=Number(document.getElementById('volume').value);currentAudio.playbackRate=Number(document.getElementById('rate').value);}}
 const LABELS = {'audio/wait.mp3':'기다려 주세요','audio/pack.mp3':'포장 중입니다','audio/ready.mp3':'음식 나왔습니다','audio/thanks.mp3':'감사합니다'};
 function setStatus(txt, on){
   document.getElementById('status').textContent = txt;
@@ -110,23 +113,23 @@ function clearPlaying(){
 }
 function playAudio(src, btn){
   stopAll();
-  currentAudio = new Audio(src);
-  currentBtn = btn || null;
-  if(currentBtn) currentBtn.classList.add('playing');
-  const vol = parseFloat(document.getElementById('volume').value);
-  currentAudio.volume = vol;
-  currentAudio.playbackRate = parseFloat(document.getElementById('rate').value);
-  currentAudio.preservesPitch = true;
-  setStatus('재생 중', true);
-  currentAudio.onended = ()=>{ clearPlaying(); setStatus('대기 중', false); };
-  currentAudio.onerror = ()=>{ clearPlaying(); setStatus('파일 오류', false); };
-  currentAudio.play();
+  const token=generation;
+  const audio=new Audio(src);
+  currentAudio=audio;currentBtn=btn||null;
+  if(currentBtn)currentBtn.classList.add('playing');
+  applyControls();audio.preservesPitch=true;
+  setStatus('준비 중',false);
+  function finish(label){if(token!==generation||currentAudio!==audio)return;audio.pause();currentAudio=null;clearPlaying();setStatus(label,false);}
+  audio.onplaying=()=>{if(token===generation&&currentAudio===audio)setStatus('재생 중',true);};
+  audio.onended=()=>finish('대기 중');audio.onerror=()=>finish('파일 오류');
+  try{Promise.resolve(audio.play()).catch(()=>finish('재생 실패'));}catch(e){finish('재생 실패');}
 }
 function stopAll(){
-  if(currentAudio){ currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
-  if('speechSynthesis' in window) speechSynthesis.cancel();
-  clearPlaying();
-  setStatus('대기 중', false);
+  generation++;
+  if(currentAudio){const audio=currentAudio;currentAudio=null;audio.onended=audio.onerror=audio.onplaying=null;audio.pause();try{audio.currentTime=0;}catch(e){}}
+  currentSpeech=null;
+  if('speechSynthesis' in window)speechSynthesis.cancel();
+  clearPlaying();setStatus('대기 중',false);
 }
 // 직접 입력용 브라우저 음성 (보조 기능)
 function getVoice(){
@@ -137,15 +140,19 @@ function speakCustom(){
   const t = document.getElementById('customText').value.trim();
   if(!t) return;
   stopAll();
+  if(!('speechSynthesis' in window)||!('SpeechSynthesisUtterance' in window)){setStatus('음성 미지원',false);return;}
+  const token=generation;
   const u = new SpeechSynthesisUtterance(t);
+  currentSpeech=u;
   const v = getVoice();
   if(v) u.voice = v;
   u.lang = 'ko-KR';
   u.rate = parseFloat(document.getElementById('rate').value);
   u.volume = parseFloat(document.getElementById('volume').value);
   setStatus('재생 중', true);
-  u.onend = ()=>{ setStatus('대기 중', false); };
-  speechSynthesis.speak(u);
+  const finish=label=>{if(token!==generation||currentSpeech!==u)return;currentSpeech=null;setStatus(label,false);};
+  u.onend=()=>finish('대기 중');u.onerror=()=>finish('음성 오류');
+  try{speechSynthesis.speak(u);}catch(e){finish('음성 오류');}
 }
 if('speechSynthesis' in window){
   speechSynthesis.getVoices();
@@ -153,11 +160,13 @@ if('speechSynthesis' in window){
 }
 // 숫자키 1~4 재생, 0/Esc 정지 (창이 선택된 상태일 때)
 document.addEventListener('keydown', (e)=>{
-  if(e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+  if(e.repeat||e.isComposing||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.target.matches('input[type=text],textarea,[contenteditable=true]'))return;
   const btns = document.querySelectorAll('.announce-btn');
-  if(['1','2','3','4'].includes(e.key)) btns[parseInt(e.key)-1].click();
+  if(['1','2','3','4'].includes(e.key)){e.preventDefault();btns[parseInt(e.key)-1].click();}
   if(e.key === '0' || e.key === 'Escape') stopAll();
 });
+window.addEventListener('pagehide',stopAll);
 </script>
 </body>
 </html>
